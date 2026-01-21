@@ -1,8 +1,9 @@
+-- 1. Users Table (Role is now VARCHAR)
 CREATE TABLE users (
                        id BIGSERIAL PRIMARY KEY,
                        username VARCHAR(255) UNIQUE NOT NULL,
                        email VARCHAR(255) UNIQUE NOT NULL,
-                       role INTEGER NOT NULL DEFAULT 1,
+                       role VARCHAR(50) NOT NULL DEFAULT 'USER', -- Changed from INTEGER DEFAULT 1
                        password_hash VARCHAR(255) NOT NULL,
                        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -66,24 +67,26 @@ CREATE TABLE flashcards (
                             updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- 2. Quizzes Table (Solution Visibility is now VARCHAR)
 CREATE TABLE quizzes (
                          id BIGSERIAL PRIMARY KEY,
                          course_id BIGINT NOT NULL,
                          title VARCHAR(255) NOT NULL,
-                         solution_visibility INTEGER NOT NULL,
+                         solution_visibility VARCHAR(50) NOT NULL DEFAULT 'ALWAYS', -- Changed from INTEGER
                          is_published BOOLEAN NOT NULL,
                          created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                          updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- 3. Questions Table (Type and Difficulty are now VARCHAR)
 CREATE TABLE questions (
                            id BIGSERIAL PRIMARY KEY,
                            quiz_id BIGINT NOT NULL,
                            topic_id BIGINT NOT NULL,
                            question_text TEXT NOT NULL,
-                           question_type INTEGER NOT NULL,
+                           question_type VARCHAR(50) NOT NULL DEFAULT 'NORMAL_MULTIPLE', -- Changed from INTEGER
                            explanation TEXT NOT NULL,
-                           difficulty_level INTEGER NOT NULL,
+                           difficulty_level VARCHAR(50) NOT NULL DEFAULT 'MEDIUM', -- Changed from INTEGER
                            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -117,7 +120,7 @@ CREATE TABLE answer_history (
                                 updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Foreign Keys
+-- Foreign Keys (No changes needed here)
 ALTER TABLE enrollments ADD FOREIGN KEY (user_id) REFERENCES users (id);
 ALTER TABLE courses ADD FOREIGN KEY (creator_id) REFERENCES users (id);
 ALTER TABLE topic_progress ADD FOREIGN KEY (user_id) REFERENCES users (id);
