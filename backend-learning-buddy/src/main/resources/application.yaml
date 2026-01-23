@@ -27,3 +27,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET:7c9df9c7cb3a3e660853c53a9292d442d4918d9543ea2d7c4cafa30613bbe734}
+      expiration: ${JWT_EXPIRATION:86400000} # Default: 1 day (in ms)
+      refresh-token:
+        expiration: ${JWT_REFRESH_EXPIRATION:604800000} # Default: 7 days

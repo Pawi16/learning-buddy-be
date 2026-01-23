@@ -23,7 +23,6 @@ CREATE TABLE enrollments (
                              id BIGSERIAL PRIMARY KEY,
                              user_id BIGINT NOT NULL,
                              course_id BIGINT NOT NULL,
-                             enrolled_at TIMESTAMP NOT NULL DEFAULT NOW(),
                              created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                              updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );

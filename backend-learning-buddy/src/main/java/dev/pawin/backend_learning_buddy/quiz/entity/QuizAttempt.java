@@ -1,9 +1,12 @@
 package dev.pawin.backend_learning_buddy.quiz.entity;
 
 import dev.pawin.backend_learning_buddy.common.entity.BaseEntity;
-import dev.pawin.backend_learning_buddy.user.entity.User;
+import dev.pawin.backend_learning_buddy.auth.entity.User;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
@@ -12,6 +15,9 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "quiz_attempts")
 public class QuizAttempt extends BaseEntity {
 
@@ -33,6 +39,7 @@ public class QuizAttempt extends BaseEntity {
     private java.time.LocalDateTime endTime;
 
     @OneToMany(mappedBy = "quizAttempt", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<AnswerHistory> answerHistories = new ArrayList<>();
 
 }
