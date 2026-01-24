@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.learning-buddy.ai/schemas/requests/process-pdf.json",
+  "title": "Process PDF Request",
+  "description": "Request schema for processing PDF files to extract topics with AI-generated summaries",
+  "type": "object",
+  "required": ["file"],
+  "properties": {
+    "file": {
+      "type": "string",
+      "format": "binary",
+      "description": "PDF file to process (max 10MB, .pdf extension required)",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false
+}

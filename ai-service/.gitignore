@@ -1,0 +1,34 @@
+# Environment variables
+.env
+
+# Virtual environment
+.venv/
+venv/
+__venv__/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Data and temp files
+data/temp/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/

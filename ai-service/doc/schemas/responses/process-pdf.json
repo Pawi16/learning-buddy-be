@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.learning-buddy.ai/schemas/responses/process-pdf.json",
+  "title": "Process PDF Response",
+  "description": "Response schema for processed PDF topics with AI-generated summaries",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "order_index": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Sequential order of the topic in the document"
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Clean, AI-generated title for the topic"
+      },
+      "description": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Brief description of the topic content"
+      },
+      "raw_text": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Raw text content extracted from the PDF"
+      },
+      "summary_note": {
+        "type": "string",
+        "minLength": 1,
+        "description": "AI-generated summary notes in Markdown format"
+      }
+    },
+    "required": ["order_index", "title", "description", "raw_text", "summary_note"],
+    "additionalProperties": false
+  }
+}

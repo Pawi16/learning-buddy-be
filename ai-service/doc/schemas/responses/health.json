@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.learning-buddy.ai/schemas/responses/health.json",
+  "title": "Health Check Response",
+  "description": "Response schema for the health check endpoint",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["healthy"],
+      "description": "Health status of the service"
+    },
+    "service": {
+      "type": "string",
+      "enum": ["ai-service"],
+      "description": "Name of the service"
+    }
+  },
+  "required": ["status", "service"],
+  "additionalProperties": true
+}
