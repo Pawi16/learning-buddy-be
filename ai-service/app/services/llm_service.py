@@ -1,7 +1,19 @@
+import logging
+
 from langchain_openai import ChatOpenAI
+from langchain_core.exceptions import OutputParserException
+from openai import AuthenticationError, RateLimitError, APITimeoutError
+
 from app.core.config import settings
 from app.schemas.pdf import SplitStrategy, TopicEnrichment, ProcessedTopic
-import json
+from app.exceptions.ai_service import (
+    AIStrategyException,
+    AIEnrichmentException,
+    AIServiceUnavailableException,
+    AIModelException,
+)
+
+logger = logging.getLogger(__name__)
 
 # --- INITIALIZE ZHIPU AI (GLM-4) ---
 llm = ChatOpenAI(
@@ -9,14 +21,21 @@ llm = ChatOpenAI(
     api_key=settings.ZHIPUAI_API_KEY,
     base_url=settings.ZHIPU_BASE_URL,
     temperature=0.1,  # Keep low for consistent JSON
-    max_retries=2,
+    max_retries=settings.AI_MAX_RETRIES,
+    timeout=settings.AI_TIMEOUT,
 )
 
 def determine_split_strategy(font_stats) -> tuple[list[float], float]:
     """
     Asks AI to analyze font statistics and return header sizes.
+
+    Raises:
+        AIStrategyException: If AI fails to determine split strategy
+        AIServiceUnavailableException: If AI service is unreachable
     """
-    if not font_stats: return [18.0], 12.0
+    if not font_stats:
+        logger.warning("No font statistics provided, using default split strategy")
+        return [18.0], 12.0
     
     # Logic to find body size (most common font)
     body_size = max(font_stats, key=lambda k: font_stats[k]['count'])
@@ -53,18 +72,56 @@ def determine_split_strategy(font_stats) -> tuple[list[float], float]:
         # Method="json_mode" is often more stable for Zhipu than "function_calling"
         response = llm.with_structured_output(SplitStrategy, method="json_mode").invoke(prompt)
         return response.target_font_sizes, body_size
+    except AuthenticationError as e:
+        logger.error(f"AI authentication failed during split strategy determination: {e}")
+        raise AIServiceUnavailableException(
+            message="AI service authentication failed",
+            details=["Check API key configuration"]
+        )
+    except RateLimitError as e:
+        logger.warning(f"AI rate limit reached during split strategy determination: {e}")
+        raise AIServiceUnavailableException(
+            message="AI service rate limit exceeded",
+            details=["Please try again later"]
+        )
+    except (APITimeoutError, TimeoutError) as e:
+        logger.error(f"AI request timeout during split strategy determination: {e}")
+        raise AIServiceUnavailableException(
+            message="AI service request timed out",
+            details=[f"Timeout: {settings.AI_TIMEOUT}s"]
+        )
+    except OutputParserException as e:
+        logger.error(f"AI output parsing failed during split strategy determination: {e}")
+        raise AIModelException(
+            message="Failed to parse AI response for split strategy",
+            details=["The AI returned invalid JSON format"]
+        )
     except Exception as e:
-        print(f"⚠️ AI Split Error: {e}")
-        # Fallback: Return a sensible default if AI fails
-        return [body_size + 2.0], body_size
+        logger.error(f"Unexpected AI error during split strategy determination: {e}", exc_info=True)
+        raise AIStrategyException(
+            message="Failed to analyze document structure",
+            details=[str(e), "Fallback to default headers failed"]
+        )
 
 def enrich_topics(raw_topics) -> list[ProcessedTopic]:
+    """
+    Enriches raw topics with AI-generated content.
+
+    Raises:
+        AIEnrichmentException: If AI fails to enrich any topic
+        AIServiceUnavailableException: If AI service is unreachable
+    """
+    if not raw_topics:
+        logger.warning("No topics provided for enrichment")
+        return []
+
+    logger.info(f"Enriching {len(raw_topics)} topics using {settings.MODEL_NAME}...")
     final_results = []
-    print(f"🧠 Enriching {len(raw_topics)} topics using {settings.MODEL_NAME}...")
 
     for index, topic in enumerate(raw_topics):
         # Skip very short topics (likely junk)
-        if len(topic['content']) < 50: 
+        if len(topic['content']) < 50:
+            logger.debug(f"Skipping topic {index + 1} (too short: {len(topic['content'])} chars)")
             continue
 
         prompt = f"""
@@ -85,7 +142,7 @@ def enrich_topics(raw_topics) -> list[ProcessedTopic]:
         try:
             # We use with_structured_output to force the Pydantic schema
             enrichment = llm.with_structured_output(TopicEnrichment, method="json_mode").invoke(prompt)
-            
+
             final_results.append(ProcessedTopic(
                 order_index=index + 1,
                 title=enrichment.clean_title,
@@ -93,15 +150,37 @@ def enrich_topics(raw_topics) -> list[ProcessedTopic]:
                 raw_text=topic['content'],
                 summary_note=enrichment.summary_note
             ))
+        except AuthenticationError as e:
+            logger.error(f"AI authentication failed while enriching topic {index + 1}: {e}")
+            raise AIServiceUnavailableException(
+                message="AI service authentication failed",
+                details=["Check API key configuration"]
+            )
+        except RateLimitError as e:
+            logger.warning(f"AI rate limit reached while enriching topic {index + 1}: {e}")
+            raise AIServiceUnavailableException(
+                message="AI service rate limit exceeded",
+                details=["Please try again later"]
+            )
+        except (APITimeoutError, TimeoutError) as e:
+            logger.error(f"AI request timeout while enriching topic {index + 1}: {e}")
+            raise AIServiceUnavailableException(
+                message="AI service request timed out",
+                details=[f"Timeout: {settings.AI_TIMEOUT}s"]
+            )
+        except OutputParserException as e:
+            logger.error(f"AI output parsing failed for topic {index + 1}: {e}")
+            raise AIEnrichmentException(
+                topic_index=index + 1,
+                message=f"Failed to parse AI response for topic {index + 1}",
+                details=[f"Topic: {topic.get('title', 'Unknown')}", "The AI returned invalid JSON format"]
+            )
         except Exception as e:
-            print(f"❌ Error enriching topic {index + 1}: {e}")
-            # Fallback logic so the whole process doesn't crash
-            final_results.append(ProcessedTopic(
-                order_index=index + 1,
-                title=topic['title'],
-                description="Content extracted from PDF.",
-                raw_text=topic['content'],
-                summary_note="> AI Generation failed. Raw text available."
-            ))
+            logger.error(f"Unexpected AI error while enriching topic {index + 1}: {e}", exc_info=True)
+            raise AIEnrichmentException(
+                topic_index=index + 1,
+                message=f"Failed to enrich topic {index + 1}",
+                details=[f"Topic: {topic.get('title', 'Unknown')}", str(e)]
+            )
             
     return final_results

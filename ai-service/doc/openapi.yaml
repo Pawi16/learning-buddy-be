@@ -38,12 +38,130 @@ paths:
                   $ref: '#/components/schemas/ProcessedTopic'
                 type: array
                 title: Response Process Pdf Api V1 Process Pdf Post
-        '422':
-          description: Validation Error
+        '400':
+          description: Bad Request - Missing filename or empty file
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HTTPValidationError'
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_filename:
+                  value:
+                    timestamp: "2026-01-25T10:30:00Z"
+                    status: 400
+                    error: "Bad Request"
+                    message: "No filename provided"
+                    path: "/api/v1/process-pdf"
+                    details: null
+                empty_file:
+                  value:
+                    timestamp: "2026-01-25T10:30:00Z"
+                    status: 400
+                    error: "Bad Request"
+                    message: "Empty file"
+                    path: "/api/v1/process-pdf"
+                    details: null
+        '413':
+          description: Payload Too Large - File exceeds maximum size
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                timestamp: "2026-01-25T10:30:00Z"
+                status: 413
+                error: "Payload Too Large"
+                message: "File too large. Maximum size: 10.0MB"
+                path: "/api/v1/process-pdf"
+                details:
+                  - "Maximum size: 10.0MB"
+        '415':
+          description: Unsupported Media Type - File type not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                timestamp: "2026-01-25T10:30:00Z"
+                status: 415
+                error: "Unsupported Media Type"
+                message: "Unsupported file type. Allowed types: .pdf"
+                path: "/api/v1/process-pdf"
+                details:
+                  - ".pdf"
+        '422':
+          description: Validation Error - Request format or data validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                timestamp: "2026-01-25T10:30:00Z"
+                status: 422
+                error: "ValidationError"
+                message: "Request validation failed"
+                path: "/api/v1/process-pdf"
+                details:
+                  - "body -> file: field required"
+                  - "query -> limit: ensure this value is greater than 0"
+        '500':
+          description: Internal Server Error - PDF processing or AI service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                pdf_parsing_error:
+                  value:
+                    timestamp: "2026-01-25T10:30:00Z"
+                    status: 500
+                    error: "Internal Server Error"
+                    message: "Failed to scan PDF: unexpected error"
+                    path: "/api/v1/process-pdf"
+                    details: null
+                pdf_corrupted:
+                  value:
+                    timestamp: "2026-01-25T10:30:00Z"
+                    status: 500
+                    error: "PDFCorrupted"
+                    message: "PDF file is corrupted or has invalid syntax"
+                    path: "/api/v1/process-pdf"
+                    details:
+                      - "Expected end of stream, found garbage"
+                ai_strategy_error:
+                  value:
+                    timestamp: "2026-01-25T10:30:00Z"
+                    status: 500
+                    error: "AIStrategyError"
+                    message: "AI service failed to analyze document structure"
+                    path: "/api/v1/process-pdf"
+                    details:
+                      - "Model: GLM-4.7"
+                      - "Body font size: 12.0"
+                      - "Font sizes analyzed: 8"
+                ai_enrichment_error:
+                  value:
+                    timestamp: "2026-01-25T10:30:00Z"
+                    status: 500
+                    error: "AIEnrichmentError"
+                    message: "Failed to enrich topic 3 (Introduction to Python)"
+                    path: "/api/v1/process-pdf"
+                    details:
+                      - "Timeout after 30 seconds"
+        '503':
+          description: Service Unavailable - AI service is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                timestamp: "2026-01-25T10:30:00Z"
+                status: 503
+                error: "Service Unavailable"
+                message: "AI service is currently unavailable after 3 retries"
+                path: "/api/v1/process-pdf"
+                details:
+                  - "Connection refused"
 components:
   schemas:
     Body_process_pdf_api_v1_process_pdf_post:
@@ -56,15 +174,42 @@ components:
       required:
       - file
       title: Body_process_pdf_api_v1_process_pdf_post
-    HTTPValidationError:
-      properties:
-        detail:
-          items:
-            $ref: '#/components/schemas/ValidationError'
-          type: array
-          title: Detail
+    ErrorResponse:
       type: object
-      title: HTTPValidationError
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when the error occurred
+          example: "2026-01-25T10:30:00Z"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        error:
+          type: string
+          description: HTTP status phrase or error type
+          example: "Bad Request"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "No filename provided"
+        path:
+          type: string
+          description: Request path that caused the error
+          example: "/api/v1/process-pdf"
+        details:
+          type: array
+          description: Optional additional error details
+          items:
+            type: string
+          example: ["Maximum size: 10.0MB", ".pdf"]
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+        - path
     ProcessedTopic:
       properties:
         order_index:
@@ -90,24 +235,3 @@ components:
       - raw_text
       - summary_note
       title: ProcessedTopic
-    ValidationError:
-      properties:
-        loc:
-          items:
-            anyOf:
-            - type: string
-            - type: integer
-          type: array
-          title: Location
-        msg:
-          type: string
-          title: Message
-        type:
-          type: string
-          title: Error Type
-      type: object
-      required:
-      - loc
-      - msg
-      - type
-      title: ValidationError

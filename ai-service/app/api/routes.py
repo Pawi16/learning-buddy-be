@@ -1,40 +1,48 @@
+"""API routes for PDF processing."""
+
 import logging
 import os
 import shutil
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, UploadFile
 
 from app.core.config import settings
+from app.exceptions.validation import (
+    MissingFilenameException,
+    EmptyFileException,
+    UnsupportedFileTypeException,
+    FileTooLargeException,
+)
 from app.schemas.pdf import ProcessedTopic
 from app.services import llm_service, pdf_service
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
 def validate_file_upload(file: UploadFile) -> None:
-    """Validate file upload for type, size, and filename."""
+    """
+    Validate file upload for type, size, and filename.
+
+    Args:
+        file: The uploaded file to validate
+
+    Raises:
+        MissingFilenameException: If no filename is provided
+        UnsupportedFileTypeException: If file type is not allowed
+        FileTooLargeException: If file exceeds maximum size
+        EmptyFileException: If file is empty
+    """
     if not file.filename:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No filename provided"
-        )
+        raise MissingFilenameException()
 
     # Check file extension
     file_ext = Path(file.filename).suffix.lower()
     if file_ext not in settings.ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail=f"Unsupported file type. Allowed types: {settings.ALLOWED_EXTENSIONS}"
-        )
+        raise UnsupportedFileTypeException(settings.ALLOWED_EXTENSIONS)
 
     # Read and validate file size
     file.file.seek(0, os.SEEK_END)
@@ -42,27 +50,30 @@ def validate_file_upload(file: UploadFile) -> None:
     file.file.seek(0)  # Reset pointer
 
     if file_size > settings.MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File too large. Maximum size: {settings.MAX_FILE_SIZE / (1024 * 1024):.1f}MB"
-        )
+        max_size_mb = settings.MAX_FILE_SIZE / (1024 * 1024)
+        raise FileTooLargeException(max_size_mb)
 
     if file_size == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Empty file"
-        )
+        raise EmptyFileException()
 
 
 def sanitize_filename(filename: str) -> str:
-    """Sanitize filename to prevent path traversal attacks."""
+    """
+    Sanitize filename to prevent path traversal attacks.
+
+    Args:
+        filename: Original filename
+
+    Returns:
+        Sanitized safe filename
+    """
     # Keep only safe characters
     safe_filename = "".join(c for c in filename if c.isalnum() or c in "._-")
     return safe_filename or "upload.pdf"
 
 
 @router.get("/health")
-async def health_check():
+async def health_check() -> dict:
     """Health check endpoint."""
     return {"status": "healthy", "service": "ai-service"}
 
@@ -79,6 +90,18 @@ async def process_pdf(
 
     Returns:
         List of processed topics with titles, descriptions, and summaries
+
+    Raises:
+        MissingFilenameException: If no filename provided
+        EmptyFileException: If file is empty
+        UnsupportedFileTypeException: If file type not supported
+        FileTooLargeException: If file exceeds size limit
+        PDFParsingException: If PDF cannot be parsed
+        PDFCorruptedException: If PDF is corrupted
+        PDFStructureException: If PDF structure cannot be analyzed
+        AIStrategyException: If AI fails to determine document structure
+        AIEnrichmentException: If AI fails to enrich topics
+        AIServiceUnavailableException: If AI service is unavailable
     """
     # Validate file
     validate_file_upload(file)
@@ -114,15 +137,6 @@ async def process_pdf(
         logger.info(f"Successfully processed {len(final_topics)} topics")
         return final_topics
 
-    except HTTPException:
-        # Re-raise HTTP exceptions as-is
-        raise
-    except Exception as e:
-        logger.error(f"Error processing PDF: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while processing the PDF"
-        )
     finally:
         # Clean up temporary file
         if os.path.exists(temp_path):

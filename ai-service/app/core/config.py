@@ -16,7 +16,15 @@ class Settings(BaseSettings):
     ALLOWED_EXTENSIONS: set[str] = {".pdf"}
 
     TEMP_FOLDER: str = "data/temp"
-    
+
+    # AI Service Retry Config
+    AI_MAX_RETRIES: int = 3
+    AI_RETRY_DELAY: float = 1.0
+    AI_TIMEOUT: int = 30
+
+    # Error Handling Config
+    INCLUDE_ERROR_DETAILS: bool = False  # Set True for development
+
     class Config:
         env_file = ".env"
 
