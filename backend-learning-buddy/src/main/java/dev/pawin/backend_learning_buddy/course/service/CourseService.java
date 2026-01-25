@@ -29,6 +29,11 @@ public class CourseService {
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     public CoursePreviewResponse previewCourse(String title, String description, MultipartFile file) {
+        // Validate title
+        if (title.isBlank()) {
+            throw new IllegalArgumentException("Course title cannot be empty");
+        }
+
         // Validate file (Optional)
         if (file.isEmpty()) {
             throw new IllegalArgumentException("File cannot be empty");
