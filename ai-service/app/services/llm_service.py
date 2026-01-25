@@ -119,6 +119,10 @@ def enrich_topics(raw_topics) -> list[ProcessedTopic]:
     final_results = []
 
     for index, topic in enumerate(raw_topics):
+        # Log progress every 5 topics
+        if (index + 1) % 5 == 0:
+            logger.info(f"Progress: {index + 1}/{len(raw_topics)} topics enriched")
+
         # Skip very short topics (likely junk)
         if len(topic['content']) < 50:
             logger.debug(f"Skipping topic {index + 1} (too short: {len(topic['content'])} chars)")

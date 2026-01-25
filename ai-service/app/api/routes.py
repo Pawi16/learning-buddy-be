@@ -3,10 +3,14 @@
 import logging
 import os
 import shutil
+import time
 from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, File, UploadFile
+# 1. ADD THESE IMPORTS to fix the Java Client error
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 from app.core.config import settings
 from app.exceptions.validation import (
@@ -26,15 +30,6 @@ router = APIRouter()
 def validate_file_upload(file: UploadFile) -> None:
     """
     Validate file upload for type, size, and filename.
-
-    Args:
-        file: The uploaded file to validate
-
-    Raises:
-        MissingFilenameException: If no filename is provided
-        UnsupportedFileTypeException: If file type is not allowed
-        FileTooLargeException: If file exceeds maximum size
-        EmptyFileException: If file is empty
     """
     if not file.filename:
         raise MissingFilenameException()
@@ -60,14 +55,7 @@ def validate_file_upload(file: UploadFile) -> None:
 def sanitize_filename(filename: str) -> str:
     """
     Sanitize filename to prevent path traversal attacks.
-
-    Args:
-        filename: Original filename
-
-    Returns:
-        Sanitized safe filename
     """
-    # Keep only safe characters
     safe_filename = "".join(c for c in filename if c.isalnum() or c in "._-")
     return safe_filename or "upload.pdf"
 
@@ -78,30 +66,12 @@ async def health_check() -> dict:
     return {"status": "healthy", "service": "ai-service"}
 
 
-@router.post("/process-pdf", response_model=list[ProcessedTopic])
+@router.post("/process-pdf")
 async def process_pdf(
     file: Annotated[UploadFile, File(...)]
-) -> list[ProcessedTopic]:
+) -> JSONResponse: # <--- Changed return type hint
     """
     Process a PDF file and extract topics with AI-generated summaries.
-
-    Args:
-        file: PDF file to process (max 10MB)
-
-    Returns:
-        List of processed topics with titles, descriptions, and summaries
-
-    Raises:
-        MissingFilenameException: If no filename provided
-        EmptyFileException: If file is empty
-        UnsupportedFileTypeException: If file type not supported
-        FileTooLargeException: If file exceeds size limit
-        PDFParsingException: If PDF cannot be parsed
-        PDFCorruptedException: If PDF is corrupted
-        PDFStructureException: If PDF structure cannot be analyzed
-        AIStrategyException: If AI fails to determine document structure
-        AIEnrichmentException: If AI fails to enrich topics
-        AIServiceUnavailableException: If AI service is unavailable
     """
     # Validate file
     validate_file_upload(file)
@@ -124,6 +94,7 @@ async def process_pdf(
 
         # 3. Determine splitting strategy using AI
         logger.info("Determining splitting strategy...")
+        # Note: calling this synchronously as requested
         split_sizes, body_size = llm_service.determine_split_strategy(stats)
 
         # 4. Split content into topics
@@ -132,10 +103,19 @@ async def process_pdf(
 
         # 5. Enrich topics with AI-generated summaries
         logger.info("Enriching topics with AI summaries...")
+        start_time = time.time()
+        # Note: calling this synchronously as requested
         final_topics = llm_service.enrich_topics(raw_topics)
+        elapsed_time = time.time() - start_time
+        logger.info(f"Successfully enriched {len(final_topics)} topics in {elapsed_time:.2f} seconds")
 
         logger.info(f"Successfully processed {len(final_topics)} topics")
-        return final_topics
+        
+        # 6. RETURN JSON RESPONSE (The Fix)
+        # We explicitly wrap the result in JSONResponse.
+        # This ensures the header is 'Content-Type: application/json'
+        # instead of 'application/octet-stream', so your Java client won't crash.
+        return JSONResponse(content=jsonable_encoder(final_topics))
 
     finally:
         # Clean up temporary file

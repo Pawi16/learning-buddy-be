@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     # Zhipu AI Config
     ZHIPUAI_API_KEY: str  # We will load this from .env
-    MODEL_NAME: str = "GLM-4.7"
+    MODEL_NAME: str = "GLM-4.5"
     ZHIPU_BASE_URL: str = "https://api.z.ai/api/coding/paas/v4"
 
     # Server Config
@@ -18,9 +18,9 @@ class Settings(BaseSettings):
     TEMP_FOLDER: str = "data/temp"
 
     # AI Service Retry Config
-    AI_MAX_RETRIES: int = 3
-    AI_RETRY_DELAY: float = 1.0
-    AI_TIMEOUT: int = 30
+    AI_MAX_RETRIES: int = 2
+    AI_RETRY_DELAY: float = 2.0
+    AI_TIMEOUT: int = 90
 
     # Error Handling Config
     INCLUDE_ERROR_DETAILS: bool = False  # Set True for development
