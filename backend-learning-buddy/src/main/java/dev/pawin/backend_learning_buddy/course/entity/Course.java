@@ -52,4 +52,13 @@ public class Course extends BaseEntity {
     @JoinColumn(name = "creator_id")
     private User creator;
 
+    public void addTopic(Topic topic) {
+        this.topics.add(topic);
+        topic.setCourse(this);
+    }
+
+    public void removeTopic(Topic topic) {
+        this.topics.remove(topic);
+        topic.setCourse(null);
+    }
 }

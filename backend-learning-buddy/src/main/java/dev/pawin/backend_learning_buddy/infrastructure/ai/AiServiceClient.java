@@ -12,6 +12,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -33,7 +34,7 @@ public class AiServiceClient {
     ) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(5000);  // 5 seconds to find the server
-        factory.setReadTimeout(300000);
+        factory.setReadTimeout(600000);  // 10 minutes (600000ms) for AI processing
 
         this.restClient = RestClient.builder()
                 .requestFactory(factory)
