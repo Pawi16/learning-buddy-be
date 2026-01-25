@@ -1,6 +1,7 @@
 package dev.pawin.backend_learning_buddy.course.controller;
 
 import dev.pawin.backend_learning_buddy.course.dto.CoursePreviewResponse;
+import dev.pawin.backend_learning_buddy.course.dto.CourseSummaryResponse;
 import dev.pawin.backend_learning_buddy.course.dto.CreateCourseRequest;
 import dev.pawin.backend_learning_buddy.course.dto.CreateCourseResponse;
 import dev.pawin.backend_learning_buddy.course.service.CourseService;
@@ -11,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/courses")
@@ -39,5 +42,13 @@ public class CourseController {
         CreateCourseResponse response = courseService.createCourse(request, username);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    @GetMapping
+    public  ResponseEntity<List<CourseSummaryResponse>> getPublicCourses(
+            @RequestParam(required = false) String search
+    ){
+        List<CourseSummaryResponse> response = courseService.getPublicCourses(search);
+        return ResponseEntity.ok(response);
     }
 }

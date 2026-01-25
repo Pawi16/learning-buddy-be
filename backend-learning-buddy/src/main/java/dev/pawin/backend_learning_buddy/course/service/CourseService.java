@@ -93,4 +93,17 @@ public class CourseService {
             }
         }
     }
+
+    @Transactional()
+    public List<CourseSummaryResponse> getPublicCourses(String search) {
+        String searchPattern = null;
+        // If search is empty string, treat it as null for the query logic
+        if (search != null && !search.isBlank()) {
+            // Prepare the pattern in Java: "%python%"
+            // We also lowercase it here to ensure the parameter passed to DB is consistent
+            searchPattern = "%" + search.toLowerCase().trim() + "%";
+        }
+
+        return courseRepository.searchPublicCourses(searchPattern);
+    }
 }

@@ -1,7 +1,31 @@
 package dev.pawin.backend_learning_buddy.course.repository;
 
+import dev.pawin.backend_learning_buddy.course.dto.CourseSummaryResponse;
 import dev.pawin.backend_learning_buddy.course.entity.Course;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
 
 public interface CourseRepository extends JpaRepository <Course, Long> {
+
+    @Query("""
+        SELECT new dev.pawin.backend_learning_buddy.course.dto.CourseSummaryResponse(
+            c.id,
+            c.title,
+            c.description,
+            c.isPublished,
+            COUNT(t),
+            c.createdAt
+        )
+        FROM Course c
+        LEFT JOIN c.topics t
+        WHERE c.isPublished = true
+        AND (:searchPattern IS NULL 
+             OR LOWER(c.title) LIKE :searchPattern 
+             OR LOWER(c.description) LIKE :searchPattern)
+        GROUP BY c.id
+    """)
+    List<CourseSummaryResponse> searchPublicCourses(@Param("searchPattern") String searchPattern);
 }
