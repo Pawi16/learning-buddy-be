@@ -6,11 +6,16 @@ import dev.pawin.backend_learning_buddy.course.dto.*;
 import dev.pawin.backend_learning_buddy.course.entity.Course;
 import dev.pawin.backend_learning_buddy.course.mapper.CourseMapper;
 import dev.pawin.backend_learning_buddy.course.repository.CourseRepository;
+import dev.pawin.backend_learning_buddy.course.repository.EnrollmentRepository;
+import dev.pawin.backend_learning_buddy.course.repository.TopicRepository;
 import dev.pawin.backend_learning_buddy.infrastructure.ai.AiServiceClient;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashSet;
@@ -25,6 +30,8 @@ public class CourseService {
     private final AiServiceClient aiServiceClient;
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
+    private final TopicRepository topicRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final CourseMapper courseMapper;
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -94,7 +101,7 @@ public class CourseService {
         }
     }
 
-    @Transactional()
+    @Transactional(readOnly = true)
     public List<CourseSummaryResponse> getPublicCourses(String search) {
         String searchPattern = null;
         // If search is empty string, treat it as null for the query logic
@@ -105,5 +112,41 @@ public class CourseService {
         }
 
         return courseRepository.searchPublicCourses(searchPattern);
+    }
+
+    @Transactional(readOnly = true)
+    public CourseDetailResponse getCourseDetail(Long courseId, String username) {
+        // Fetch User
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Fetch Course (Metadata)
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new EntityNotFoundException("Course not found"));
+
+        // Check user access to this course
+        // If not published, only the creator can see it
+        if (!Boolean.TRUE.equals(course.getIsPublished())) {
+            if (!course.getCreator().getId().equals(currentUser.getId())) {
+                throw new AccessDeniedException("You do not have permission to view this private course.");
+            }
+        }
+
+        // Get lightweight topic summaries
+        List<TopicSummaryDto> topics = topicRepository.findSummariesByCourseId(courseId);
+
+        // check if user enrolled this course (condition for showing enroll button)
+        boolean isEnrolled = enrollmentRepository.existsByUserIdAndCourseId(currentUser.getId(), courseId);
+
+        return CourseDetailResponse.builder()
+                .courseId(course.getId())
+                .title(course.getTitle())
+                .description(course.getDescription())
+                .isPublished(course.getIsPublished())
+                .isEnrolled(isEnrolled)
+                .createdAt(course.getCreatedAt())
+                .updatedAt(course.getUpdatedAt())
+                .topics(topics)
+                .build();
     }
 }

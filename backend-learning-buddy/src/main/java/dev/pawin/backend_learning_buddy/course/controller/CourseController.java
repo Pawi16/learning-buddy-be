@@ -1,9 +1,6 @@
 package dev.pawin.backend_learning_buddy.course.controller;
 
-import dev.pawin.backend_learning_buddy.course.dto.CoursePreviewResponse;
-import dev.pawin.backend_learning_buddy.course.dto.CourseSummaryResponse;
-import dev.pawin.backend_learning_buddy.course.dto.CreateCourseRequest;
-import dev.pawin.backend_learning_buddy.course.dto.CreateCourseResponse;
+import dev.pawin.backend_learning_buddy.course.dto.*;
 import dev.pawin.backend_learning_buddy.course.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -51,4 +48,14 @@ public class CourseController {
         List<CourseSummaryResponse> response = courseService.getPublicCourses(search);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CourseDetailResponse> getCourseDetail(
+            @PathVariable Long id,
+            Authentication authentication
+    ){
+        CourseDetailResponse response = courseService.getCourseDetail(id, authentication.getName());
+        return ResponseEntity.ok(response);
+    }
+
 }
