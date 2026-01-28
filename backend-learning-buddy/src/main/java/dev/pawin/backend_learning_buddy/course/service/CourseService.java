@@ -12,6 +12,7 @@ import dev.pawin.backend_learning_buddy.infrastructure.ai.AiServiceClient;
 import jakarta.persistence.EntityNotFoundException;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -183,5 +184,26 @@ public class CourseService {
                 .message("Course Update Successfully")
                 .courseMetadataDto(metadataResponse)
                 .build();
+    }
+
+    @Transactional
+    public DeleteCourseResponse deleteCourse(Long id, String username) {
+        Course course = courseRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Course not found"));
+
+        // fetch current user & validate permission
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        if (!course.getCreator().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You do not have permission to delete this course.");
+        }
+
+        if (enrollmentRepository.existsByCourseId(id)) {
+            throw new DataIntegrityViolationException("Cannot delete course with students.");
+        }
+
+        courseRepository.delete(course);
+
+        return DeleteCourseResponse.builder().message("Course deleted successfully.").build();
     }
 }

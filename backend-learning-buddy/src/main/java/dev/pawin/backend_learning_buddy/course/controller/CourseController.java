@@ -68,4 +68,13 @@ public class CourseController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<DeleteCourseResponse> deleteCourse (
+            @PathVariable Long id,
+            Authentication authentication
+    ){
+        DeleteCourseResponse response = courseService.deleteCourse(id, authentication.getName());
+        return ResponseEntity.ok(response);
+    }
+
 }
