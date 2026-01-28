@@ -1,23 +1,21 @@
 package dev.pawin.backend_learning_buddy.course.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CourseSummaryResponse {
-    private Long id;
+public class UpdateCourseRequest {
     private String title;
     private String description;
+
     @JsonProperty("is_published")
     private Boolean isPublished;
-    private Long totalTopics;    // JPQL count() returns Long
-    private LocalDateTime createdAt;
 }

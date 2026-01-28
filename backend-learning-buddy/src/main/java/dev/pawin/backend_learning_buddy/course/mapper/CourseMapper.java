@@ -1,5 +1,6 @@
 package dev.pawin.backend_learning_buddy.course.mapper;
 
+import dev.pawin.backend_learning_buddy.course.dto.CourseMetadataDto;
 import dev.pawin.backend_learning_buddy.course.dto.CreateCourseRequest;
 import dev.pawin.backend_learning_buddy.course.dto.TopicDraftDto;
 import dev.pawin.backend_learning_buddy.course.entity.Course;
@@ -27,4 +28,6 @@ public interface CourseMapper {
             course.getTopics().forEach(topic -> topic.setCourse(course));
         }
     }
+
+    CourseMetadataDto toMetadataResponse(Course course);
 }

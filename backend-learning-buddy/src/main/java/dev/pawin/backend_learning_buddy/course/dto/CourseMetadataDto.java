@@ -10,14 +10,16 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class CourseSummaryResponse {
+@NoArgsConstructor
+public class CourseMetadataDto {
     private Long id;
     private String title;
     private String description;
+
     @JsonProperty("is_published")
     private Boolean isPublished;
-    private Long totalTopics;    // JPQL count() returns Long
-    private LocalDateTime createdAt;
+
+    @JsonProperty("updated_at")
+    private LocalDateTime updatedAt;
 }

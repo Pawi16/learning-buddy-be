@@ -12,12 +12,8 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CourseSummaryResponse {
-    private Long id;
-    private String title;
-    private String description;
-    @JsonProperty("is_published")
-    private Boolean isPublished;
-    private Long totalTopics;    // JPQL count() returns Long
-    private LocalDateTime createdAt;
+public class UpdateCourseResponse {
+    @JsonProperty("data")
+    private CourseMetadataDto courseMetadataDto;
+    private String message;
 }

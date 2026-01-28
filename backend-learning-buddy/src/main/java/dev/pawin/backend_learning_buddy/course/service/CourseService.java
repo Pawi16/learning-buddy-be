@@ -149,4 +149,39 @@ public class CourseService {
                 .topics(topics)
                 .build();
     }
+
+    @Transactional
+    public UpdateCourseResponse updateCourseMetadata(Long id, String username, UpdateCourseRequest request) {
+        Course course = courseRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Course not found"));
+
+        // fetch current user
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        if (!course.getCreator().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You do not have permission to edit this course.");
+        }
+
+        if (request.getTitle() != null){
+            if (request.getTitle().isBlank()){
+                throw new IllegalArgumentException("Title is required");
+            }
+            course.setTitle(request.getTitle());
+        }
+
+        if (request.getDescription() != null){
+            course.setDescription(request.getDescription());
+        }
+
+        if (request.getIsPublished() != null){
+            course.setIsPublished(request.getIsPublished());
+        }
+
+        CourseMetadataDto metadataResponse = courseMapper.toMetadataResponse(course);
+
+        return UpdateCourseResponse.builder()
+                .message("Course Update Successfully")
+                .courseMetadataDto(metadataResponse)
+                .build();
+    }
 }

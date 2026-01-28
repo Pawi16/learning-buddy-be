@@ -58,4 +58,14 @@ public class CourseController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<UpdateCourseResponse> updateCourseMetadata (
+            @PathVariable Long id,
+            @RequestBody UpdateCourseRequest request,
+            Authentication authentication
+    ){
+        UpdateCourseResponse response = courseService.updateCourseMetadata(id, authentication.getName(), request);
+        return ResponseEntity.ok(response);
+    }
+
 }
