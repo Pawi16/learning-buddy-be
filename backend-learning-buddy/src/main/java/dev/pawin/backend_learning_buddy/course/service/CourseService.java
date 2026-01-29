@@ -206,4 +206,30 @@ public class CourseService {
 
         return DeleteCourseResponse.builder().message("Course deleted successfully.").build();
     }
+
+    @Transactional(readOnly = true)
+    public CourseContentResponse getCourseContent(Long courseId, String username) {
+        // Fetch User
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Fetch Course
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new EntityNotFoundException("Course not found"));
+
+        // Access Control: unpublished courses only accessible to creator
+        if (!Boolean.TRUE.equals(course.getIsPublished())) {
+            if (!course.getCreator().getId().equals(currentUser.getId())) {
+                throw new AccessDeniedException("You do not have permission to view this private course.");
+            }
+        }
+
+        // Fetch all topic details
+        List<TopicDetailDto> topics = topicRepository.findDetailsByCourseId(courseId);
+
+        return CourseContentResponse.builder()
+                .id(course.getId())
+                .topics(topics)
+                .build();
+    }
 }

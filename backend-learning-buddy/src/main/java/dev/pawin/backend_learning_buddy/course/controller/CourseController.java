@@ -77,4 +77,13 @@ public class CourseController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{id}/content")
+    public ResponseEntity<CourseContentResponse> getCourseContent(
+            @PathVariable Long id,
+            Authentication authentication
+    ){
+        CourseContentResponse response = courseService.getCourseContent(id, authentication.getName());
+        return ResponseEntity.ok(response);
+    }
+
 }
