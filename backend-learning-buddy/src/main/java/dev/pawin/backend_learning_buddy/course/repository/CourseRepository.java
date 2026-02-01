@@ -33,4 +33,20 @@ public interface CourseRepository extends JpaRepository <Course, Long> {
     @Query("SELECT c FROM Course c LEFT JOIN FETCH c.topics WHERE c.id = :id")
     Optional<Course> findByIdWithTopics(@Param("id") Long id);
 
+    @Query("""
+        SELECT new dev.pawin.backend_learning_buddy.course.dto.CourseSummaryResponse(
+            c.id,
+            c.title,
+            c.description,
+            c.isPublished,
+            COUNT(t),
+            c.createdAt
+        )
+        FROM Course c
+        LEFT JOIN c.topics t
+        WHERE c.creator.id = :id
+        GROUP BY c.id
+    """)
+    List<CourseSummaryResponse> findCoursesByCreatorId(@Param("id") Long id);
+
 }

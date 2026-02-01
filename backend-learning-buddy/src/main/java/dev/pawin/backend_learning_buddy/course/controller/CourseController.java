@@ -96,4 +96,13 @@ public class CourseController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/my")
+    public ResponseEntity<List<CourseSummaryResponse>> getMyCourses (
+            Authentication authentication
+    ){
+        List<CourseSummaryResponse> myCourses = courseService.getMyCourses(authentication.getName());
+
+        return ResponseEntity.ok(myCourses);
+    }
+
 }

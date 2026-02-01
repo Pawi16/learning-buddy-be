@@ -300,4 +300,12 @@ public class CourseService {
         existingTopic.setSummaryNote(dto.getSummaryNote());
     }
 
+    @Transactional(readOnly = true)
+    public List<CourseSummaryResponse> getMyCourses(String username) {
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        return courseRepository.findCoursesByCreatorId(currentUser.getId());
+
+    }
 }
