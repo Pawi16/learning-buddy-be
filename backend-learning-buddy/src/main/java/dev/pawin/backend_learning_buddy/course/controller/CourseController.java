@@ -86,4 +86,14 @@ public class CourseController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{id}/content")
+    public ResponseEntity<UpdateCourseContentResponse> updateCourseContent(
+            @PathVariable Long id,
+            @RequestBody UpdateCourseContentRequest request,
+            Authentication authentication
+    ){
+        UpdateCourseContentResponse response = courseService.updateCourseContent(id, authentication.getName(), request);
+        return ResponseEntity.ok(response);
+    }
+
 }

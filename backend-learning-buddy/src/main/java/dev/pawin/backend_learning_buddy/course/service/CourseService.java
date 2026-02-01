@@ -4,13 +4,13 @@ import dev.pawin.backend_learning_buddy.auth.entity.User;
 import dev.pawin.backend_learning_buddy.auth.repository.UserRepository;
 import dev.pawin.backend_learning_buddy.course.dto.*;
 import dev.pawin.backend_learning_buddy.course.entity.Course;
+import dev.pawin.backend_learning_buddy.course.entity.Topic;
 import dev.pawin.backend_learning_buddy.course.mapper.CourseMapper;
 import dev.pawin.backend_learning_buddy.course.repository.CourseRepository;
 import dev.pawin.backend_learning_buddy.course.repository.EnrollmentRepository;
 import dev.pawin.backend_learning_buddy.course.repository.TopicRepository;
 import dev.pawin.backend_learning_buddy.infrastructure.ai.AiServiceClient;
 import jakarta.persistence.EntityNotFoundException;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
@@ -19,22 +19,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CourseService {
 
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
     private final AiServiceClient aiServiceClient;
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
     private final TopicRepository topicRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final CourseMapper courseMapper;
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     public CoursePreviewResponse previewCourse(String title, String description, MultipartFile file) {
         // Validate title
@@ -163,18 +162,18 @@ public class CourseService {
             throw new AccessDeniedException("You do not have permission to edit this course.");
         }
 
-        if (request.getTitle() != null){
-            if (request.getTitle().isBlank()){
+        if (request.getTitle() != null) {
+            if (request.getTitle().isBlank()) {
                 throw new IllegalArgumentException("Title is required");
             }
             course.setTitle(request.getTitle());
         }
 
-        if (request.getDescription() != null){
+        if (request.getDescription() != null) {
             course.setDescription(request.getDescription());
         }
 
-        if (request.getIsPublished() != null){
+        if (request.getIsPublished() != null) {
             course.setIsPublished(request.getIsPublished());
         }
 
@@ -232,4 +231,73 @@ public class CourseService {
                 .topics(topics)
                 .build();
     }
+
+    @Transactional
+    public UpdateCourseContentResponse updateCourseContent(Long id, String username, UpdateCourseContentRequest request) {
+        // Fetch Course with Topics
+        Course course = courseRepository.findByIdWithTopics(id)
+                .orElseThrow(() -> new EntityNotFoundException("Course not found"));
+
+        // Fetch Current User
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        if (!course.getCreator().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You do not have permission to update this course.");
+        }
+
+        // Prepared update content in map (map only existed topic that have id)
+        Map<Long, TopicDetailDto> incomingMap = request.getTopics().stream().filter(t -> t.getId()
+                != null).collect(Collectors.toMap(TopicDetailDto::getId, Function.identity()));
+
+        // Update & Delete
+        Iterator<Topic> iterator = course.getTopics().iterator();
+
+        while (iterator.hasNext()) {
+            Topic existingTopic = iterator.next();
+
+            if (incomingMap.containsKey(existingTopic.getId())) {
+                // update
+                TopicDetailDto updateTopic = incomingMap.get(existingTopic.getId());
+                updateTopicFromDto(existingTopic, updateTopic);
+
+                // remove from map
+                incomingMap.remove(existingTopic.getId());
+            } else {
+                // delete if topic doesn't exist in incomingMap
+                iterator.remove();
+            }
+        }
+
+        // Insert new topic
+        List<TopicDetailDto> newTopics = request.getTopics().stream()
+                .filter(t -> t.getId() == null)
+                .toList();
+
+        for (TopicDetailDto dto : newTopics) {
+            Topic newTopic = courseMapper.TopicDetailDtoToTopic(dto);
+            course.addTopic(newTopic);
+        }
+
+        // Validation
+        // if incomingMap is not empty, mean user sent topic id that belong to other course
+        if (!incomingMap.isEmpty()) {
+            throw new IllegalArgumentException("Invalid Topic IDs provided: " + incomingMap.keySet());
+        }
+
+        courseRepository.save(course);
+
+        return UpdateCourseContentResponse.builder().message("Course content saved.").build();
+
+    }
+
+
+    private void updateTopicFromDto(Topic existingTopic, TopicDetailDto dto) {
+        existingTopic.setOrderIndex(dto.getOrderIndex());
+        existingTopic.setTitle(dto.getTitle());
+        existingTopic.setDescription(dto.getDescription());
+        existingTopic.setRawText(dto.getRawText());
+        existingTopic.setSummaryNote(dto.getSummaryNote());
+    }
+
 }

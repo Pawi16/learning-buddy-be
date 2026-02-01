@@ -2,6 +2,7 @@ package dev.pawin.backend_learning_buddy.course.mapper;
 
 import dev.pawin.backend_learning_buddy.course.dto.CourseMetadataDto;
 import dev.pawin.backend_learning_buddy.course.dto.CreateCourseRequest;
+import dev.pawin.backend_learning_buddy.course.dto.TopicDetailDto;
 import dev.pawin.backend_learning_buddy.course.dto.TopicDraftDto;
 import dev.pawin.backend_learning_buddy.course.entity.Course;
 import dev.pawin.backend_learning_buddy.course.entity.Topic;
@@ -30,4 +31,10 @@ public interface CourseMapper {
     }
 
     CourseMetadataDto toMetadataResponse(Course course);
+
+    @Mapping(target = "course", ignore = true)
+    @Mapping(target = "flashcards", ignore = true)
+    @Mapping(target = "questions", ignore = true)
+    @Mapping(target = "topicProgresses", ignore = true)
+    Topic TopicDetailDtoToTopic(TopicDetailDto dto);
 }
