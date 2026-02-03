@@ -2,6 +2,7 @@ package dev.pawin.backend_learning_buddy.course.controller;
 
 import dev.pawin.backend_learning_buddy.course.dto.*;
 import dev.pawin.backend_learning_buddy.course.service.CourseService;
+import dev.pawin.backend_learning_buddy.course.service.EnrollmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import java.util.List;
 public class CourseController {
 
     private final CourseService courseService;
+    private final EnrollmentService enrollmentService;
 
     @PostMapping(value = "/preview", consumes = "multipart/form-data")
     public ResponseEntity<CoursePreviewResponse> previewCourse(
@@ -103,6 +105,18 @@ public class CourseController {
         List<CourseSummaryResponse> myCourses = courseService.getMyCourses(authentication.getName());
 
         return ResponseEntity.ok(myCourses);
+    }
+
+    @PostMapping("/{id}/enroll")
+    public ResponseEntity<EnrollCourseResponse> enrollInCourse(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        EnrollCourseResponse response = enrollmentService.enrollUser(id, authentication.getName());
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
 }

@@ -15,7 +15,9 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "enrollments")
+@Table(name = "enrollments", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "course_id"})
+})
 public class Enrollment extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
