@@ -125,6 +125,8 @@ public class CourseService {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new EntityNotFoundException("Course not found"));
 
+        boolean isOwner = course.getCreator().getId().equals(currentUser.getId());
+
         // Check user access to this course
         // If not published, only the creator can see it
         if (!Boolean.TRUE.equals(course.getIsPublished())) {
@@ -145,6 +147,7 @@ public class CourseService {
                 .description(course.getDescription())
                 .isPublished(course.getIsPublished())
                 .isEnrolled(isEnrolled)
+                .isOwner(isOwner)
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .topics(topics)

@@ -21,6 +21,9 @@ public class CourseDetailResponse {
     @JsonProperty("is_enrolled")
     private Boolean isEnrolled;
 
+    @JsonProperty("is_owner")
+    private Boolean isOwner;
+
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
