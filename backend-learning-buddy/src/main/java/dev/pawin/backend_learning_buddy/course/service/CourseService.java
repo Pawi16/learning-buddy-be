@@ -313,5 +313,10 @@ public class CourseService {
 
     }
 
+    @Transactional(readOnly = true)
+    public List<CourseSummaryResponse> getEnrolledCourses(String username) {
+        return courseRepository.findEnrolledCoursesByUsername(username);
+    }
+
 
 }

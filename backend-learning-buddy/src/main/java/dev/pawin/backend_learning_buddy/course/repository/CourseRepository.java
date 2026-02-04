@@ -49,4 +49,21 @@ public interface CourseRepository extends JpaRepository <Course, Long> {
     """)
     List<CourseSummaryResponse> findCoursesByCreatorId(@Param("id") Long id);
 
+    @Query("""
+        SELECT new dev.pawin.backend_learning_buddy.course.dto.CourseSummaryResponse(
+            c.id,
+            c.title,
+            c.description,
+            c.isPublished,
+            COUNT(t),
+            c.createdAt
+        )
+        FROM Enrollment e
+        JOIN e.course c
+        LEFT JOIN c.topics t
+        WHERE e.user.username = :username
+        GROUP BY c, e.createdAt
+        ORDER BY e.createdAt DESC
+    """)
+    List<CourseSummaryResponse> findEnrolledCoursesByUsername(@Param("username") String username);
 }
