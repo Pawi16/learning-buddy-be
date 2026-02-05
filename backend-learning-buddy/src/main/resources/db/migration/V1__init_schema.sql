@@ -83,9 +83,9 @@ CREATE TABLE questions (
                            quiz_id BIGINT NOT NULL,
                            topic_id BIGINT NOT NULL,
                            question_text TEXT NOT NULL,
-                           question_type VARCHAR(50) NOT NULL DEFAULT 'NORMAL_MULTIPLE', -- Changed from INTEGER
+                           question_type VARCHAR(50) NOT NULL, -- Changed from INTEGER
                            explanation TEXT NOT NULL,
-                           difficulty_level VARCHAR(50) NOT NULL DEFAULT 'MEDIUM', -- Changed from INTEGER
+                           difficulty_level VARCHAR(50) NOT NULL, -- Changed from INTEGER
                            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                            updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
