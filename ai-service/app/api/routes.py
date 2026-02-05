@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from app.core.config import settings
+from app.exceptions.base import AppException
 from app.exceptions.validation import (
     MissingFilenameException,
     EmptyFileException,
@@ -20,7 +21,9 @@ from app.exceptions.validation import (
     FileTooLargeException,
 )
 from app.schemas.pdf import ProcessedTopic
-from app.services import llm_service, pdf_service
+from app.schemas.quiz import GenerateQuizRequest, QuizResponse
+from app.services import llm_service, pdf_service, quiz_service
+from app.exceptions.quiz_generation import QuizGenerationException
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +67,23 @@ def sanitize_filename(filename: str) -> str:
 async def health_check() -> dict:
     """Health check endpoint."""
     return {"status": "healthy", "service": "ai-service"}
+
+
+@router.post("/generate-quiz")
+async def generate_quiz(request: GenerateQuizRequest) -> JSONResponse:
+    """Generate quiz questions from topic content using AI."""
+    logger.info(f"Generating quiz for topic: {request.topicName}")
+    try:
+        result = quiz_service.generate_quiz(request)
+        return JSONResponse(content=jsonable_encoder(result))
+    except AppException:
+        raise  # Let global handler catch
+    except Exception as e:
+        logger.error(f"Unexpected error in quiz generation: {e}", exc_info=True)
+        raise QuizGenerationException(
+            message="Failed to generate quiz",
+            details=[str(e)]
+        )
 
 
 @router.post("/process-pdf")

@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.learning-buddy.ai/schemas/responses/question.json",
+  "title": "Question Response",
+  "description": "A single quiz question with choices",
+  "type": "object",
+  "properties": {
+    "question_text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The question text"
+    },
+    "question_type": {
+      "type": "string",
+      "enum": ["NORMAL_MULTIPLE", "STATEMENT_VERIFICATION", "STATEMENT_COUNTING"],
+      "description": "Type of question"
+    },
+    "explanation": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Explanation of the answer"
+    },
+    "difficulty_level": {
+      "type": "string",
+      "enum": ["EASY", "MEDIUM", "HARD"],
+      "description": "Difficulty level of the question"
+    },
+    "choices": {
+      "type": "array",
+      "items": {
+        "$ref": "choice.json"
+      },
+      "description": "Available choices for the question",
+      "minItems": 1
+    }
+  },
+  "required": ["question_text", "question_type", "explanation", "difficulty_level", "choices"],
+  "additionalProperties": false
+}

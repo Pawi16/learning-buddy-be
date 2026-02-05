@@ -23,6 +23,11 @@ from app.exceptions.ai_service import (
     AIStrategyException,
     AIEnrichmentException,
 )
+from app.exceptions.quiz_generation import (
+    QuizGenerationException,
+    QuizParsingException,
+    QuizRequestException,
+)
 
 __all__ = [
     # Base
@@ -41,4 +46,8 @@ __all__ = [
     "AIModelException",
     "AIStrategyException",
     "AIEnrichmentException",
+    # Quiz Generation
+    "QuizGenerationException",
+    "QuizParsingException",
+    "QuizRequestException",
 ]

@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Learning Buddy AI Service
-  description: AI-powered PDF processing and topic extraction service
-  version: 0.1.0
+  description: AI-powered PDF processing, topic extraction, and quiz generation service
+  version: 0.2.0
 paths:
   /api/v1/health:
     get:
@@ -136,7 +136,7 @@ paths:
                     message: "AI service failed to analyze document structure"
                     path: "/api/v1/process-pdf"
                     details:
-                      - "Model: GLM-4.7"
+                      - "Model: GLM-4.5"
                       - "Body font size: 12.0"
                       - "Font sizes analyzed: 8"
                 ai_enrichment_error:
@@ -160,6 +160,163 @@ paths:
                 error: "Service Unavailable"
                 message: "AI service is currently unavailable after 3 retries"
                 path: "/api/v1/process-pdf"
+                details:
+                  - "Connection refused"
+  /api/v1/generate-quiz:
+    post:
+      summary: Generate Quiz
+      description: "Generate quiz questions based on a topic and its content.\n\nArgs:\n    topicName: Name of the topic to generate quiz for\n    topicContent: Content/text about the topic\n    quiz_config: Quiz configuration array with difficulty and question types\n\nReturns:\n    Generated quiz with questions, choices, and explanations"
+      operationId: generate_quiz_api_v1_generate_quiz_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateQuizRequest'
+            examples:
+              easy_quiz:
+                summary: Easy quiz on Builder Pattern
+                value:
+                  topicName: "Builder Pattern"
+                  topicContent: "The Builder pattern is a creational design pattern that separates the construction of a complex object from its representation, allowing the same construction process to create different representations."
+                  quiz_config:
+                    - difficulty: "EASY"
+                      quiz_type_config:
+                        - type: "NORMAL_MULTIPLE"
+                          number: 2
+              mixed_difficulty:
+                summary: Mixed difficulty quiz
+                value:
+                  topicName: "Design Patterns"
+                  topicContent: "Design patterns are best practices that the programmer can use to solve common problems when designing an application or system."
+                  quiz_config:
+                    - difficulty: "EASY"
+                      quiz_type_config:
+                        - type: "NORMAL_MULTIPLE"
+                          number: 1
+                    - difficulty: "MEDIUM"
+                      quiz_type_config:
+                        - type: "STATEMENT_VERIFICATION"
+                          number: 2
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizResponse'
+              examples:
+                normal_multiple:
+                  summary: Normal multiple choice questions
+                  value:
+                    topic_title: "Builder Pattern"
+                    questions:
+                      - question_text: "What is the primary purpose of the Builder pattern?"
+                        question_type: "NORMAL_MULTIPLE"
+                        explanation: "The Builder pattern separates the construction of an object from its representation."
+                        difficulty_level: "EASY"
+                        choices:
+                          - choice_text: "To improve performance"
+                            is_correct: false
+                          - choice_text: "To separate construction from representation"
+                            is_correct: true
+                          - choice_text: "To reduce memory usage"
+                            is_correct: false
+                          - choice_text: "To simplify inheritance"
+                            is_correct: false
+                statement_verification:
+                  summary: Statement verification questions
+                  value:
+                    topic_title: "Design Patterns"
+                    questions:
+                      - question_text: "The Builder pattern is a creational design pattern."
+                        question_type: "STATEMENT_VERIFICATION"
+                        explanation: "True. The Builder pattern is classified as a creational design pattern."
+                        difficulty_level: "MEDIUM"
+                        choices:
+                          - choice_text: "True"
+                            is_correct: true
+                          - choice_text: "False"
+                            is_correct: false
+                statement_counting:
+                  summary: Statement counting questions
+                  value:
+                    topic_title: "Design Patterns"
+                    questions:
+                      - question_text: "How many key components does the Builder pattern typically have?"
+                        question_type: "STATEMENT_COUNTING"
+                        explanation: "The Builder pattern typically has 4 key components: Builder, Concrete Builder, Director, and Product."
+                        difficulty_level: "MEDIUM"
+                        choices:
+                          - choice_text: "2"
+                            is_correct: false
+                          - choice_text: "3"
+                            is_correct: false
+                          - choice_text: "4"
+                            is_correct: true
+                          - choice_text: "5"
+                            is_correct: false
+        '400':
+          description: Bad Request - Invalid quiz configuration or request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_difficulty:
+                  value:
+                    timestamp: "2026-02-05T10:30:00Z"
+                    status: 400
+                    error: "Bad Request"
+                    message: "Invalid difficulty level"
+                    path: "/api/v1/generate-quiz"
+                    details:
+                      - "Difficulty must be one of: EASY, MEDIUM, HARD"
+                invalid_question_type:
+                  value:
+                    timestamp: "2026-02-05T10:30:00Z"
+                    status: 400
+                    error: "Bad Request"
+                    message: "Invalid question type"
+                    path: "/api/v1/generate-quiz"
+                    details:
+                      - "Question type must be one of: NORMAL_MULTIPLE, STATEMENT_VERIFICATION, STATEMENT_COUNTING"
+        '500':
+          description: Internal Server Error - Quiz generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                parsing_error:
+                  value:
+                    timestamp: "2026-02-05T10:30:00Z"
+                    status: 500
+                    error: "QuizParsingException"
+                    message: "Failed to parse quiz response from AI"
+                    path: "/api/v1/generate-quiz"
+                    details: null
+                generation_error:
+                  value:
+                    timestamp: "2026-02-05T10:30:00Z"
+                    status: 500
+                    error: "QuizGenerationException"
+                    message: "Failed to generate quiz after 2 retries"
+                    path: "/api/v1/generate-quiz"
+                    details:
+                      - "AI service timeout"
+        '503':
+          description: Service Unavailable - AI service is unreachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                timestamp: "2026-02-05T10:30:00Z"
+                status: 503
+                error: "Service Unavailable"
+                message: "AI service is currently unavailable after 2 retries"
+                path: "/api/v1/generate-quiz"
                 details:
                   - "Connection refused"
 components:
@@ -235,3 +392,115 @@ components:
       - raw_text
       - summary_note
       title: ProcessedTopic
+    GenerateQuizRequest:
+      type: object
+      properties:
+        topicName:
+          type: string
+          minLength: 1
+          description: Name of the topic to generate quiz for
+        topicContent:
+          type: string
+          minLength: 1
+          description: Content/text about the topic
+        quiz_config:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizConfig'
+          description: Quiz configuration array
+      required:
+        - topicName
+        - topicContent
+        - quiz_config
+      title: GenerateQuizRequest
+    QuizConfig:
+      type: object
+      properties:
+        difficulty:
+          type: string
+          enum: [EASY, MEDIUM, HARD]
+          description: Difficulty level for questions
+        quiz_type_config:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionTypeRequest'
+          description: Question type specifications
+      required:
+        - difficulty
+        - quiz_type_config
+      title: QuizConfig
+    QuestionTypeRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [NORMAL_MULTIPLE, STATEMENT_VERIFICATION, STATEMENT_COUNTING]
+          description: Type of question to generate
+        number:
+          type: integer
+          minimum: 1
+          description: Number of questions to generate
+      required:
+        - type
+        - number
+      title: QuestionTypeRequest
+    QuizResponse:
+      type: object
+      properties:
+        topic_title:
+          type: string
+          description: Title of the quiz topic
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionResponse'
+          description: Generated questions
+      required:
+        - topic_title
+        - questions
+      title: QuizResponse
+    QuestionResponse:
+      type: object
+      properties:
+        question_text:
+          type: string
+          minLength: 1
+          description: The question text
+        question_type:
+          type: string
+          enum: [NORMAL_MULTIPLE, STATEMENT_VERIFICATION, STATEMENT_COUNTING]
+          description: Type of question
+        explanation:
+          type: string
+          minLength: 1
+          description: Explanation of the answer
+        difficulty_level:
+          type: string
+          enum: [EASY, MEDIUM, HARD]
+          description: Difficulty level of the question
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChoiceResponse'
+          description: Available choices for the question
+      required:
+        - question_text
+        - question_type
+        - explanation
+        - difficulty_level
+        - choices
+      title: QuestionResponse
+    ChoiceResponse:
+      type: object
+      properties:
+        choice_text:
+          type: string
+          minLength: 1
+          description: The choice text
+        is_correct:
+          type: boolean
+          description: Whether this choice is correct
+      required:
+        - choice_text
+        - is_correct
+      title: ChoiceResponse

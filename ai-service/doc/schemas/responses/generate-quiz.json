@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.learning-buddy.ai/schemas/responses/generate-quiz.json",
+  "title": "Generate Quiz Response",
+  "description": "Response schema for quiz generation endpoint containing generated questions",
+  "type": "object",
+  "properties": {
+    "topic_title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Title of the quiz topic"
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "$ref": "question.json"
+      },
+      "description": "Generated questions",
+      "minItems": 1
+    }
+  },
+  "required": ["topic_title", "questions"],
+  "additionalProperties": false
+}

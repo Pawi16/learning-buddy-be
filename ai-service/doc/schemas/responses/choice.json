@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.learning-buddy.ai/schemas/responses/choice.json",
+  "title": "Choice Response",
+  "description": "A single choice for a quiz question",
+  "type": "object",
+  "properties": {
+    "choice_text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The choice text"
+    },
+    "is_correct": {
+      "type": "boolean",
+      "description": "Whether this choice is correct"
+    }
+  },
+  "required": ["choice_text", "is_correct"],
+  "additionalProperties": false
+}

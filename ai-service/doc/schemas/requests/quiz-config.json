@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.learning-buddy.ai/schemas/requests/quiz-config.json",
+  "title": "Quiz Configuration",
+  "description": "Configuration for quiz generation at a specific difficulty level",
+  "type": "object",
+  "properties": {
+    "difficulty": {
+      "type": "string",
+      "enum": ["EASY", "MEDIUM", "HARD"],
+      "description": "Difficulty level for questions"
+    },
+    "quiz_type_config": {
+      "type": "array",
+      "items": {
+        "$ref": "question-type-request.json"
+      },
+      "description": "Question type specifications",
+      "minItems": 1
+    }
+  },
+  "required": ["difficulty", "quiz_type_config"],
+  "additionalProperties": false
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.learning-buddy.ai/schemas/responses/error.json",
+  "title": "Error Response",
+  "description": "Standard error response schema for all API errors",
+  "type": "object",
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the error occurred",
+      "example": "2026-01-25T10:30:00Z"
+    },
+    "status": {
+      "type": "integer",
+      "description": "HTTP status code",
+      "example": 400
+    },
+    "error": {
+      "type": "string",
+      "description": "HTTP status phrase or error type",
+      "example": "Bad Request"
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable error message",
+      "example": "No filename provided"
+    },
+    "path": {
+      "type": "string",
+      "description": "Request path that caused the error",
+      "example": "/api/v1/process-pdf"
+    },
+    "details": {
+      "type": ["array", "null"],
+      "description": "Optional additional error details",
+      "items": {
+        "type": "string"
+      },
+      "example": ["Maximum size: 10.0MB", ".pdf"]
+    }
+  },
+  "required": ["timestamp", "status", "error", "message", "path"],
+  "additionalProperties": false
+}

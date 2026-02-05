@@ -15,6 +15,9 @@ from app.exceptions.ai_service import (
     AIStrategyException,
     AIEnrichmentException,
 )
+from app.exceptions.quiz_generation import (
+    QuizGenerationException,
+)
 from app.exceptions.pdf_processing import (
     PDFParsingException,
     PDFCorruptedException,
