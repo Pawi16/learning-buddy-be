@@ -138,6 +138,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
     }
 
+    @ExceptionHandler(dev.pawin.backend_learning_buddy.common.exception.QuizJobNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleQuizJobNotFoundException(
+            dev.pawin.backend_learning_buddy.common.exception.QuizJobNotFoundException ex,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception ex,

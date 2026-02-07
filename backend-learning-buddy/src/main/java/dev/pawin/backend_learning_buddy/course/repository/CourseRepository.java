@@ -2,6 +2,7 @@ package dev.pawin.backend_learning_buddy.course.repository;
 
 import dev.pawin.backend_learning_buddy.course.dto.CourseSummaryResponse;
 import dev.pawin.backend_learning_buddy.course.entity.Course;
+import dev.pawin.backend_learning_buddy.course.entity.Topic;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -66,4 +67,7 @@ public interface CourseRepository extends JpaRepository <Course, Long> {
         ORDER BY e.createdAt DESC
     """)
     List<CourseSummaryResponse> findEnrolledCoursesByUsername(@Param("username") String username);
+
+    @Query("SELECT t FROM Topic t JOIN FETCH t.course WHERE t.id = :topicId")
+    Optional<Topic> findTopicById(@Param("topicId") Long topicId);
 }

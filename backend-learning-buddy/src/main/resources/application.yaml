@@ -41,3 +41,9 @@ application:
         expiration: ${JWT_REFRESH_EXPIRATION:604800000} # Default: 7 days
   ai-service:
     url: ${AI_SERVICE_URL:http://localhost:8000}
+
+quiz:
+  async:
+    core-pool-size: 5      # Match AI service max concurrency
+    max-pool-size: 10      # Scale up under load
+    queue-capacity: 100
