@@ -1,6 +1,7 @@
 package dev.pawin.backend_learning_buddy.quiz.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,9 +14,16 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class JobStatusResponse {
 
+    @JsonProperty("job_id")
     private String jobId;
+
     private String status;
+
+    @JsonProperty("progress_percent")
     private Integer progressPercent;
+
+    @JsonProperty("error_message")
     private String errorMessage;
+
     private QuizPreviewResponse result;
 }

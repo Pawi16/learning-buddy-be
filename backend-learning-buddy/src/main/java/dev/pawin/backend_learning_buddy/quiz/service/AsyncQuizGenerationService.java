@@ -53,7 +53,7 @@ public class AsyncQuizGenerationService {
             AtomicInteger completedCounter = new AtomicInteger(0);
 
             // Create CompletableFuture for each topic (parallel execution)
-            List<CompletableFuture<QuizPreviewResponse.TopicQuizPreview>> futures = request.getQuizTopics().stream()
+            List<CompletableFuture<List<QuizPreviewResponse.GeneratedQuestion>>> futures = request.getQuizTopics().stream()
                     .map(topicConfig -> CompletableFuture.supplyAsync(() -> {
                         return processTopic(topicConfig, jobId, completedCounter, totalTopics);
                     }, quizTaskExecutor))
@@ -62,11 +62,11 @@ public class AsyncQuizGenerationService {
             // Wait for all futures to complete
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-            // Collect results
-            List<QuizPreviewResponse.TopicQuizPreview> results = new ArrayList<>();
-            for (CompletableFuture<QuizPreviewResponse.TopicQuizPreview> future : futures) {
+            // Collect all questions into a flat list
+            List<QuizPreviewResponse.GeneratedQuestion> allQuestions = new ArrayList<>();
+            for (CompletableFuture<List<QuizPreviewResponse.GeneratedQuestion>> future : futures) {
                 try {
-                    results.add(future.get());
+                    allQuestions.addAll(future.get());
                 } catch (Exception e) {
                     logger.error("Failed to get result from future", e);
                     throw new RuntimeException("Failed to process topic", e);
@@ -77,7 +77,9 @@ public class AsyncQuizGenerationService {
             String resultJson;
             try {
                 resultJson = objectMapper.writeValueAsString(
-                        QuizPreviewResponse.builder().topics(results).build()
+                        QuizPreviewResponse.builder()
+                                .generatedQuestions(allQuestions)
+                                .build()
                 );
             } catch (JsonProcessingException e) {
                 logger.error("Failed to serialize quiz results to JSON", e);
@@ -87,7 +89,7 @@ public class AsyncQuizGenerationService {
 
             // Update job to COMPLETED
             updateJobCompleted(jobId, resultJson);
-            logger.info("Job {} completed successfully with {} topics", jobId, results.size());
+            logger.info("Job {} completed successfully with {} questions", jobId, allQuestions.size());
 
         } catch (Exception e) {
             logger.error("Quiz generation failed for job {}", jobId, e);
@@ -95,7 +97,7 @@ public class AsyncQuizGenerationService {
         }
     }
 
-    private QuizPreviewResponse.TopicQuizPreview processTopic(
+    private List<QuizPreviewResponse.GeneratedQuestion> processTopic(
             TopicQuizConfig topicConfig,
             Long jobId,
             AtomicInteger completedCounter,
@@ -120,9 +122,9 @@ public class AsyncQuizGenerationService {
                     aiQuizConfig
             );
 
-            // Transform AI response to backend format
-            List<QuizPreviewResponse.QuestionPreview> questions = aiResponse.getQuestions().stream()
-                    .map(this::mapQuestion)
+            // Transform AI response to backend format with topic_id
+            List<QuizPreviewResponse.GeneratedQuestion> questions = aiResponse.getQuestions().stream()
+                    .map(aiQuestion -> mapQuestionWithTopic(aiQuestion, topic.getId()))
                     .toList();
 
             // Update progress
@@ -132,11 +134,7 @@ public class AsyncQuizGenerationService {
             logger.info("Topic {} completed. Progress: {}/{} ({}%)",
                     topicConfig.getTopicId(), completed, totalTopics, progress);
 
-            return QuizPreviewResponse.TopicQuizPreview.builder()
-                    .topicId(topic.getId())
-                    .topicTitle(topic.getTitle())
-                    .questions(questions)
-                    .build();
+            return questions;
 
         } catch (Exception e) {
             logger.error("Failed to process topic {}", topicConfig.getTopicId(), e);
@@ -158,18 +156,22 @@ public class AsyncQuizGenerationService {
                 .build();
     }
 
-    private QuizPreviewResponse.QuestionPreview mapQuestion(GenerateQuizAiResponse.Question aiQuestion) {
-        List<QuizPreviewResponse.ChoicePreview> choices = aiQuestion.getChoices().stream()
-                .map(aiChoice -> QuizPreviewResponse.ChoicePreview.builder()
+    private QuizPreviewResponse.GeneratedQuestion mapQuestionWithTopic(
+            GenerateQuizAiResponse.Question aiQuestion,
+            Long topicId
+    ) {
+        List<QuizPreviewResponse.GeneratedQuestion.Choice> choices = aiQuestion.getChoices().stream()
+                .map(aiChoice -> QuizPreviewResponse.GeneratedQuestion.Choice.builder()
                         .choiceText(aiChoice.getChoiceText())
                         .isCorrect(aiChoice.getIsCorrect())
                         .build())
                 .toList();
 
-        return QuizPreviewResponse.QuestionPreview.builder()
+        return QuizPreviewResponse.GeneratedQuestion.builder()
+                .topicId(topicId)
                 .questionText(aiQuestion.getQuestionText())
                 .questionType(aiQuestion.getQuestionType())
-                .difficultyLevel(aiQuestion.getDifficultyLevel())
+                .difficulty(aiQuestion.getDifficultyLevel())
                 .explanation(aiQuestion.getExplanation())
                 .choices(choices)
                 .build();
