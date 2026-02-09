@@ -35,6 +35,7 @@ public class Quiz extends BaseEntity {
     private SolutionVisibility solutionVisibility = SolutionVisibility.ALWAYS;
 
     @Column(name = "is_published", nullable = false)
+    @Builder.Default
     private Boolean isPublished = false;
 
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -3,6 +3,9 @@ package dev.pawin.backend_learning_buddy.course.controller;
 import dev.pawin.backend_learning_buddy.course.dto.*;
 import dev.pawin.backend_learning_buddy.course.service.CourseService;
 import dev.pawin.backend_learning_buddy.course.service.EnrollmentService;
+import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizRequest;
+import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizResponse;
+import dev.pawin.backend_learning_buddy.quiz.service.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +23,7 @@ public class CourseController {
 
     private final CourseService courseService;
     private final EnrollmentService enrollmentService;
+    private final QuizService quizService;
 
     @PostMapping(value = "/preview", consumes = "multipart/form-data")
     public ResponseEntity<CoursePreviewResponse> previewCourse(
@@ -123,5 +127,15 @@ public class CourseController {
     public ResponseEntity<List<CourseSummaryResponse>> getMyEnrolledCourses(Authentication authentication) {
         List<CourseSummaryResponse> courses = courseService.getEnrolledCourses(authentication.getName());
         return ResponseEntity.ok(courses);
+    }
+
+    @PostMapping("/{id}/quizzes")
+    public ResponseEntity<CreateQuizResponse> createQuiz(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateQuizRequest request,
+            Authentication authentication
+    ) {
+        CreateQuizResponse response = quizService.createQuiz(id, request, authentication.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
