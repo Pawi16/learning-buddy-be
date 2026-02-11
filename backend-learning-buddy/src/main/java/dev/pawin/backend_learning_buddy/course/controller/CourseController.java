@@ -5,6 +5,7 @@ import dev.pawin.backend_learning_buddy.course.service.CourseService;
 import dev.pawin.backend_learning_buddy.course.service.EnrollmentService;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizRequest;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizResponse;
+import dev.pawin.backend_learning_buddy.quiz.dto.QuizSummaryResponse;
 import dev.pawin.backend_learning_buddy.quiz.service.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -137,5 +138,15 @@ public class CourseController {
     ) {
         CreateQuizResponse response = quizService.createQuiz(id, request, authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/{id}/quizzes")
+    public ResponseEntity<List<QuizSummaryResponse>> getCourseQuizzes(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        List<QuizSummaryResponse> quizzes = quizService.getQuizzesByCourseId(
+                id, authentication.getName());
+        return ResponseEntity.ok(quizzes);
     }
 }

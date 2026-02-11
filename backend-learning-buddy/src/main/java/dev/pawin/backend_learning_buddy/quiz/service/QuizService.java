@@ -1,11 +1,14 @@
 package dev.pawin.backend_learning_buddy.quiz.service;
 
+import dev.pawin.backend_learning_buddy.auth.entity.User;
+import dev.pawin.backend_learning_buddy.auth.repository.UserRepository;
 import dev.pawin.backend_learning_buddy.course.entity.Course;
 import dev.pawin.backend_learning_buddy.course.entity.Topic;
 import dev.pawin.backend_learning_buddy.course.repository.CourseRepository;
 import dev.pawin.backend_learning_buddy.course.repository.TopicRepository;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizRequest;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizResponse;
+import dev.pawin.backend_learning_buddy.quiz.dto.QuizSummaryResponse;
 import dev.pawin.backend_learning_buddy.quiz.entity.Choice;
 import dev.pawin.backend_learning_buddy.quiz.entity.Question;
 import dev.pawin.backend_learning_buddy.quiz.entity.Quiz;
@@ -13,8 +16,11 @@ import dev.pawin.backend_learning_buddy.quiz.repository.QuizRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +29,7 @@ public class QuizService {
     private final QuizRepository quizRepository;
     private final CourseRepository courseRepository;
     private final TopicRepository topicRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public CreateQuizResponse createQuiz(Long courseId, CreateQuizRequest request, String username) {
@@ -93,5 +100,22 @@ public class QuizService {
                 .quizId(savedQuiz.getId())
                 .message("Quiz created successfully")
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<QuizSummaryResponse> getQuizzesByCourseId(Long courseId, String username) {
+        // Validate course exists
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new EntityNotFoundException("Course not found with id: " + courseId));
+
+        // Get current user
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Check if user is course owner
+        boolean isOwner = course.getCreator().getId().equals(currentUser.getId());
+
+        // Fetch quiz summaries (owner sees all, others see only published)
+        return quizRepository.findQuizSummariesByCourseId(courseId, isOwner);
     }
 }
