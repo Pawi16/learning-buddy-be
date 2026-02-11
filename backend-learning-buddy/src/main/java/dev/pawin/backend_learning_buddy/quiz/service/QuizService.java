@@ -8,10 +8,12 @@ import dev.pawin.backend_learning_buddy.course.repository.CourseRepository;
 import dev.pawin.backend_learning_buddy.course.repository.TopicRepository;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizRequest;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizResponse;
+import dev.pawin.backend_learning_buddy.quiz.dto.QuizExamDetailResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizSummaryResponse;
 import dev.pawin.backend_learning_buddy.quiz.entity.Choice;
 import dev.pawin.backend_learning_buddy.quiz.entity.Question;
 import dev.pawin.backend_learning_buddy.quiz.entity.Quiz;
+import dev.pawin.backend_learning_buddy.quiz.mapper.QuizMapper;
 import dev.pawin.backend_learning_buddy.quiz.repository.QuizRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class QuizService {
     private final CourseRepository courseRepository;
     private final TopicRepository topicRepository;
     private final UserRepository userRepository;
+    private final QuizMapper quizMapper;
 
     @Transactional
     public CreateQuizResponse createQuiz(Long courseId, CreateQuizRequest request, String username) {
@@ -117,5 +120,25 @@ public class QuizService {
 
         // Fetch quiz summaries (owner sees all, others see only published)
         return quizRepository.findQuizSummariesByCourseId(courseId, isOwner);
+    }
+
+    @Transactional(readOnly = true)
+    public QuizExamDetailResponse getQuizForAttempt(Long quizId, String username) {
+        // Fetch quiz with questions and choices
+        Quiz quiz = quizRepository.findQuizByIdWithQuestions(quizId)
+                .orElseThrow(() -> new EntityNotFoundException("Quiz not found with id: " + quizId));
+
+        // Get current user
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Access control: course owner can access unpublished quizzes, others cannot
+        boolean isCourseOwner = quiz.getCourse().getCreator().getId().equals(currentUser.getId());
+        if (!quiz.getIsPublished() && !isCourseOwner) {
+            throw new EntityNotFoundException("Quiz not found with id: " + quizId);
+        }
+
+        // Map to response DTO (security fields automatically excluded)
+        return quizMapper.toQuizExamDetailResponse(quiz);
     }
 }
