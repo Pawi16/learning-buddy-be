@@ -1,6 +1,7 @@
 package dev.pawin.backend_learning_buddy.quiz.entity;
 
 import dev.pawin.backend_learning_buddy.common.entity.BaseEntity;
+import dev.pawin.backend_learning_buddy.common.enumeration.AttemptStatus;
 import dev.pawin.backend_learning_buddy.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,7 +30,7 @@ public class QuizAttempt extends BaseEntity {
     @JoinColumn(name = "quiz_id", nullable = false)
     private Quiz quiz;
 
-    @Column(name = "quiz_score", nullable = false)
+    @Column(name = "quiz_score")
     private Integer quizScore;
 
     @Column(name = "start_time")
@@ -37,6 +38,10 @@ public class QuizAttempt extends BaseEntity {
 
     @Column(name = "end_time")
     private java.time.LocalDateTime endTime;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private AttemptStatus status; // IN_PROGRESS, COMPLETED
 
     @OneToMany(mappedBy = "quizAttempt", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
