@@ -15,6 +15,8 @@ import dev.pawin.backend_learning_buddy.quiz.dto.QuizExamDetailResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizResultResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizSummaryResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.SubmitQuizRequest;
+import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizContentRequest;
+import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizContentResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizMetadataRequest;
 import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizMetadataResponse;
 import dev.pawin.backend_learning_buddy.quiz.entity.AnswerHistory;
@@ -39,8 +41,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -394,5 +398,161 @@ public class QuizService {
                                 .quizMetadata(quizMapper.toQuizMetadataResponse(savedQuiz))
                                 .message("Quiz metadata updated successfully")
                                 .build();
+        }
+
+        @Transactional
+        public UpdateQuizContentResponse updateQuizContent(Long quizId, String username, UpdateQuizContentRequest request) {
+                // 1. Fetch Quiz with Questions (use existing query)
+                Quiz quiz = quizRepository.findQuizByIdWithQuestions(quizId)
+                                .orElseThrow(() -> new EntityNotFoundException("Quiz not found"));
+
+                // 2. Fetch Current User
+                User currentUser = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+                // 3. Validate Ownership (course creator only)
+                if (!quiz.getCourse().getCreator().getId().equals(currentUser.getId())) {
+                        throw new AccessDeniedException("You do not have permission to update this quiz content");
+                }
+
+                // 4. Build map of incoming questions with IDs (for O(1) lookup)
+                Map<Long, UpdateQuizContentRequest.QuestionDetailDto> incomingQuestionMap = request.getQuestions().stream()
+                                .filter(q -> q.getId() != null)
+                                .collect(Collectors.toMap(UpdateQuizContentRequest.QuestionDetailDto::getId, Function.identity()));
+
+                // 5. Process Existing Questions: Update or Delete
+                Iterator<Question> questionIterator = quiz.getQuestions().iterator();
+
+                while (questionIterator.hasNext()) {
+                        Question existingQuestion = questionIterator.next();
+
+                        if (incomingQuestionMap.containsKey(existingQuestion.getId())) {
+                                // UPDATE: Update question fields
+                                UpdateQuizContentRequest.QuestionDetailDto incomingQuestion = incomingQuestionMap.get(existingQuestion.getId());
+                                updateQuestionFromDto(existingQuestion, incomingQuestion);
+                                incomingQuestionMap.remove(existingQuestion.getId()); // Remove from map
+                        } else {
+                                // DELETE: Question not in incoming payload → remove (cascade deletes choices)
+                                questionIterator.remove();
+                        }
+                }
+
+                // 6. Insert New Questions (those with null IDs)
+                List<UpdateQuizContentRequest.QuestionDetailDto> newQuestions = request.getQuestions().stream()
+                                .filter(q -> q.getId() == null)
+                                .toList();
+
+                for (UpdateQuizContentRequest.QuestionDetailDto questionDto : newQuestions) {
+                        // Fetch and validate topic
+                        Topic topic = topicRepository.findById(questionDto.getTopicId())
+                                        .orElseThrow(() -> new EntityNotFoundException("Topic not found with id: " + questionDto.getTopicId()));
+
+                        // Verify topic belongs to the quiz's course
+                        if (!topic.getCourse().getId().equals(quiz.getCourse().getId())) {
+                                throw new IllegalArgumentException(
+                                                "Topic with id " + questionDto.getTopicId()
+                                                        + " does not belong to course with id " + quiz.getCourse().getId());
+                        }
+
+                        // Build Question entity
+                        Question question = Question.builder()
+                                        .quiz(quiz)
+                                        .topic(topic)
+                                        .questionText(questionDto.getQuestionText())
+                                        .questionType(questionDto.getQuestionType())
+                                        .difficultyLevel(questionDto.getDifficulty())
+                                        .explanation(questionDto.getExplanation() != null ? questionDto.getExplanation() : "")
+                                        .build();
+
+                        // Build and add Choices (bidirectional)
+                        for (UpdateQuizContentRequest.ChoiceDetailDto choiceDto : questionDto.getChoices()) {
+                                Choice choice = Choice.builder()
+                                                .question(question)
+                                                .choiceText(choiceDto.getChoiceText())
+                                                .isCorrect(choiceDto.getIsCorrect())
+                                                .build();
+                                question.getChoices().add(choice);
+                        }
+
+                        // Add question to quiz (establishes bidirectional relationship)
+                        quiz.getQuestions().add(question);
+                }
+
+                // 7. Validation: If incomingQuestionMap is not empty, means user sent question IDs belonging to other quiz
+                if (!incomingQuestionMap.isEmpty()) {
+                        throw new IllegalArgumentException(
+                                        "Invalid Question IDs provided (do not belong to this quiz): " + incomingQuestionMap.keySet());
+                }
+
+                // 8. Save (cascade handles all CRUD operations)
+                quizRepository.save(quiz);
+
+                return UpdateQuizContentResponse.builder()
+                                .message("Quiz content saved successfully.")
+                                .build();
+        }
+
+        private void updateQuestionFromDto(Question existingQuestion, UpdateQuizContentRequest.QuestionDetailDto dto) {
+                // Update basic fields
+                existingQuestion.setQuestionText(dto.getQuestionText());
+                existingQuestion.setQuestionType(dto.getQuestionType());
+                existingQuestion.setDifficultyLevel(dto.getDifficulty());
+                existingQuestion.setExplanation(dto.getExplanation() != null ? dto.getExplanation() : "");
+
+                // Handle Topic update (validate belongs to same course)
+                if (!existingQuestion.getTopic().getId().equals(dto.getTopicId())) {
+                        Topic newTopic = topicRepository.findById(dto.getTopicId())
+                                        .orElseThrow(() -> new EntityNotFoundException("Topic not found with id: " + dto.getTopicId()));
+
+                        if (!newTopic.getCourse().getId().equals(existingQuestion.getQuiz().getCourse().getId())) {
+                                throw new IllegalArgumentException(
+                                                "Topic with id " + dto.getTopicId()
+                                                        + " does not belong to course with id " + existingQuestion.getQuiz().getCourse().getId());
+                        }
+                        existingQuestion.setTopic(newTopic);
+                }
+
+                // Build map of incoming choices with IDs
+                Map<Long, UpdateQuizContentRequest.ChoiceDetailDto> incomingChoiceMap = dto.getChoices().stream()
+                                .filter(c -> c.getId() != null)
+                                .collect(Collectors.toMap(UpdateQuizContentRequest.ChoiceDetailDto::getId, Function.identity()));
+
+                // Process Existing Choices: Update or Delete
+                Iterator<Choice> choiceIterator = existingQuestion.getChoices().iterator();
+
+                while (choiceIterator.hasNext()) {
+                        Choice existingChoice = choiceIterator.next();
+
+                        if (incomingChoiceMap.containsKey(existingChoice.getId())) {
+                                // UPDATE
+                                UpdateQuizContentRequest.ChoiceDetailDto incomingChoice = incomingChoiceMap.get(existingChoice.getId());
+                                existingChoice.setChoiceText(incomingChoice.getChoiceText());
+                                existingChoice.setIsCorrect(incomingChoice.getIsCorrect());
+                                incomingChoiceMap.remove(existingChoice.getId());
+                        } else {
+                                // DELETE (cascade not needed, Choice has no children)
+                                choiceIterator.remove();
+                        }
+                }
+
+                // Insert New Choices (those with null IDs)
+                List<UpdateQuizContentRequest.ChoiceDetailDto> newChoices = dto.getChoices().stream()
+                                .filter(c -> c.getId() == null)
+                                .toList();
+
+                for (UpdateQuizContentRequest.ChoiceDetailDto choiceDto : newChoices) {
+                        Choice newChoice = Choice.builder()
+                                        .question(existingQuestion)
+                                        .choiceText(choiceDto.getChoiceText())
+                                        .isCorrect(choiceDto.getIsCorrect())
+                                        .build();
+                        existingQuestion.getChoices().add(newChoice);
+                }
+
+                // Validation: Check for stray choice IDs
+                if (!incomingChoiceMap.isEmpty()) {
+                        throw new IllegalArgumentException(
+                                        "Invalid Choice IDs provided (do not belong to this question): " + incomingChoiceMap.keySet());
+                }
         }
 }

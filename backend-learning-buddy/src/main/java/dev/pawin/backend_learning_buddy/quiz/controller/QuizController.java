@@ -5,6 +5,8 @@ import dev.pawin.backend_learning_buddy.quiz.dto.QuizExamDetailResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizMetadataResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizResultResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.SubmitQuizRequest;
+import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizContentRequest;
+import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizContentResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizMetadataRequest;
 import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizMetadataResponse;
 import dev.pawin.backend_learning_buddy.quiz.service.QuizService;
@@ -58,5 +60,15 @@ public class QuizController {
     ) {
         UpdateQuizMetadataResponse response = quizService.updateQuizMetadata(id, authentication.getName(), request);
         return ResponseEntity.ok(response.getQuizMetadata());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UpdateQuizContentResponse> updateQuizContent(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateQuizContentRequest request,
+            Authentication authentication
+    ) {
+        UpdateQuizContentResponse response = quizService.updateQuizContent(id, authentication.getName(), request);
+        return ResponseEntity.ok(response);
     }
 }
