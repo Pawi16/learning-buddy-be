@@ -1,5 +1,6 @@
 package dev.pawin.backend_learning_buddy.quiz.controller;
 
+import dev.pawin.backend_learning_buddy.quiz.dto.QuizDetailResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizExamDetailResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizResultResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.SubmitQuizRequest;
@@ -35,5 +36,14 @@ public class QuizController {
     ) {
         QuizResultResponse response = quizService.submitQuizAttempt(id, request, authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<QuizDetailResponse> getQuizDetail(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        QuizDetailResponse response = quizService.getQuizDetail(id, authentication.getName());
+        return ResponseEntity.ok(response);
     }
 }

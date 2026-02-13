@@ -10,6 +10,7 @@ import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizRequest;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizResponse;
 import dev.pawin.backend_learning_buddy.common.enumeration.AttemptStatus;
 import dev.pawin.backend_learning_buddy.common.enumeration.SolutionVisibility;
+import dev.pawin.backend_learning_buddy.quiz.dto.QuizDetailResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizExamDetailResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizResultResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizSummaryResponse;
@@ -285,5 +286,68 @@ public class QuizService {
                                 durationSeconds,
                                 quizResultMapperHelper.buildFeedback(answerHistories, quiz.getQuestions(),
                                                 includeSolution));
+        }
+
+        @Transactional(readOnly = true)
+        public QuizDetailResponse getQuizDetail(Long quizId, String username) {
+                // 1. Fetch User
+                User currentUser = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+                // 2. Fetch Quiz with Questions (using existing query)
+                Quiz quiz = quizRepository.findQuizByIdWithQuestions(quizId)
+                                .orElseThrow(() -> new EntityNotFoundException("Quiz not found"));
+
+                // 3. Check if user is course owner
+                boolean isOwner = quiz.getCourse().getCreator().getId().equals(currentUser.getId());
+
+                // 4. Access control: only course owners can access quiz details
+                if (!isOwner) {
+                        throw new AccessDeniedException("You do not have permission to view this quiz");
+                }
+
+                // 5. Fetch Choices Separately (Batch Query) - avoiding Hibernate two-layer issue
+                List<Long> questionIds = quiz.getQuestions().stream()
+                                .map(Question::getId)
+                                .collect(Collectors.toList());
+
+                List<Choice> allChoices = choiceRepository.findChoicesByQuestionIds(questionIds);
+
+                // 6. Build Map: Question ID -> List of Choices
+                Map<Long, List<Choice>> choicesByQuestion = allChoices.stream()
+                                .collect(Collectors.groupingBy(c -> c.getQuestion().getId()));
+
+                // 7. Map to Response DTO (manually combining questions + choices)
+                List<QuizDetailResponse.QuestionDetailDto> questionDtos = quiz.getQuestions().stream()
+                                .map(question -> {
+                                        List<Choice> questionChoices = choicesByQuestion.getOrDefault(question.getId(), List.of());
+                                        return QuizDetailResponse.QuestionDetailDto.builder()
+                                                        .id(question.getId())
+                                                        .topicId(question.getTopic().getId())
+                                                        .questionText(question.getQuestionText())
+                                                        .questionType(question.getQuestionType().name())
+                                                        .difficulty(question.getDifficultyLevel() != null ? question.getDifficultyLevel().name() : null)
+                                                        .explanation(question.getExplanation())
+                                                        .choices(questionChoices.stream()
+                                                                        .map(choice -> QuizDetailResponse.ChoiceDetailDto.builder()
+                                                                                        .id(choice.getId())
+                                                                                        .choiceText(choice.getChoiceText())
+                                                                                        .isCorrect(choice.getIsCorrect())
+                                                                                        .build())
+                                                                        .collect(Collectors.toList()))
+                                                        .build();
+                                })
+                                .collect(Collectors.toList());
+
+                return QuizDetailResponse.builder()
+                                .quizId(quiz.getId())
+                                .courseId(quiz.getCourse().getId())
+                                .title(quiz.getTitle())
+                                .solutionVisibility(quiz.getSolutionVisibility())
+                                .isPublished(quiz.getIsPublished())
+                                .createdAt(quiz.getCreatedAt())
+                                .updatedAt(quiz.getUpdatedAt())
+                                .questions(questionDtos)
+                                .build();
         }
 }
