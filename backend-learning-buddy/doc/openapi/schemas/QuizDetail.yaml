@@ -1,0 +1,86 @@
+type: object
+required:
+  - quiz_id
+  - course_id
+  - title
+  - is_published
+  - questions
+properties:
+  quiz_id:
+    type: integer
+    example: 101
+  course_id:
+    type: integer
+    example: 55
+  title:
+    type: string
+    example: "Final Exam: Advanced Java"
+  solution_visibility:
+    type: string
+    enum: [ALWAYS, NEVER]
+    description: |
+      Determines feedback visibility.
+      ALWAYS = Practice Mode (Show answers and explanation at the end)
+      NEVER = Exam Mode (Hide answers and explanation)
+    example: "ALWAYS"
+  is_published:
+    type: boolean
+    example: true
+  created_at:
+    type: string
+    format: date-time
+    description: "When the quiz was created"
+    example: "2023-10-27T10:00:00Z"
+  updated_at:
+    type: string
+    format: date-time
+    description: "When the quiz was updated"
+    example: "2023-10-28T10:00:00Z"
+  questions:
+    type: array
+    description: "Full list of questions for editing"
+    items:
+      type: object
+      required:
+        - id
+        - question_text
+        - question_type
+        - choices
+      properties:
+        id:
+          type: integer
+          description: "ID is crucial for updating existing questions"
+          example: 501
+        topic_id:
+          type: integer
+          description: "To categorize which topic this question belongs to"
+          example: 12
+        question_text:
+          type: string
+          example: "Which design pattern ensures a class has only one instance?"
+        question_type:
+          type: string
+          enum: [NORMAL_MULTIPLE, STATEMENT_VERIFICATION, STATEMENT_COUNTING]
+        difficulty:
+          type: string
+          enum: [EASY, MEDIUM, HARD]
+        explanation:
+          type: string
+        choices:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+              - choice_text
+              - is_correct
+            properties:
+              id:
+                type: integer
+                description: "ID is crucial for updating existing choices"
+                example: 1001
+              choice_text:
+                type: string
+                example: "Singleton Pattern"
+              is_correct: 
+                type: boolean
