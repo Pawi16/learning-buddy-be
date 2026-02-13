@@ -45,6 +45,7 @@ public class QuizResultResponse {
         @JsonProperty("question_text")
         private String questionText;
 
+        @JsonProperty("is_correct")
         private Boolean isCorrect;
 
         @JsonProperty("user_choice_ids")
