@@ -15,6 +15,8 @@ import dev.pawin.backend_learning_buddy.quiz.dto.QuizExamDetailResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizResultResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizSummaryResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.SubmitQuizRequest;
+import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizMetadataRequest;
+import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizMetadataResponse;
 import dev.pawin.backend_learning_buddy.quiz.entity.AnswerHistory;
 import dev.pawin.backend_learning_buddy.quiz.entity.Choice;
 import dev.pawin.backend_learning_buddy.quiz.entity.Question;
@@ -348,6 +350,49 @@ public class QuizService {
                                 .createdAt(quiz.getCreatedAt())
                                 .updatedAt(quiz.getUpdatedAt())
                                 .questions(questionDtos)
+                                .build();
+        }
+
+        @Transactional
+        public UpdateQuizMetadataResponse updateQuizMetadata(Long quizId, String username, UpdateQuizMetadataRequest request) {
+                // 1. Fetch Quiz
+                Quiz quiz = quizRepository.findById(quizId)
+                                .orElseThrow(() -> new EntityNotFoundException("Quiz not found"));
+
+                // 2. Fetch User
+                User currentUser = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+                // 3. Validate Ownership (course creator only)
+                if (!quiz.getCourse().getCreator().getId().equals(currentUser.getId())) {
+                        throw new AccessDeniedException("You do not have permission to edit this quiz");
+                }
+
+                // 4. Partial Update: Title (required but nullable check)
+                if (request.getTitle() != null) {
+                        if (request.getTitle().isBlank()) {
+                                throw new IllegalArgumentException("Title is required");
+                        }
+                        quiz.setTitle(request.getTitle());
+                }
+
+                // 5. Partial Update: Solution Visibility (optional)
+                if (request.getSolutionVisibility() != null) {
+                        quiz.setSolutionVisibility(request.getSolutionVisibility());
+                }
+
+                // 6. Partial Update: Is Published (optional)
+                if (request.getIsPublished() != null) {
+                        quiz.setIsPublished(request.getIsPublished());
+                }
+
+                // 7. Save (updated_at is handled automatically by @PreUpdate in BaseEntity)
+                Quiz savedQuiz = quizRepository.save(quiz);
+
+                // 8. Build Response with full metadata
+                return UpdateQuizMetadataResponse.builder()
+                                .quizMetadata(quizMapper.toQuizMetadataResponse(savedQuiz))
+                                .message("Quiz metadata updated successfully")
                                 .build();
         }
 }

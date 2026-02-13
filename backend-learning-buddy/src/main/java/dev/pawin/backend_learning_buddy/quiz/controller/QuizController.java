@@ -2,8 +2,11 @@ package dev.pawin.backend_learning_buddy.quiz.controller;
 
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizDetailResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizExamDetailResponse;
+import dev.pawin.backend_learning_buddy.quiz.dto.QuizMetadataResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizResultResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.SubmitQuizRequest;
+import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizMetadataRequest;
+import dev.pawin.backend_learning_buddy.quiz.dto.UpdateQuizMetadataResponse;
 import dev.pawin.backend_learning_buddy.quiz.service.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -45,5 +48,15 @@ public class QuizController {
     ) {
         QuizDetailResponse response = quizService.getQuizDetail(id, authentication.getName());
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<QuizMetadataResponse> updateQuizMetadata(
+            @PathVariable Long id,
+            @RequestBody UpdateQuizMetadataRequest request,
+            Authentication authentication
+    ) {
+        UpdateQuizMetadataResponse response = quizService.updateQuizMetadata(id, authentication.getName(), request);
+        return ResponseEntity.ok(response.getQuizMetadata());
     }
 }

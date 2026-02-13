@@ -3,6 +3,7 @@ package dev.pawin.backend_learning_buddy.quiz.mapper;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizExamDetailResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizExamDetailResponse.ChoiceExamDto;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizExamDetailResponse.QuestionExamDto;
+import dev.pawin.backend_learning_buddy.quiz.dto.QuizMetadataResponse;
 import dev.pawin.backend_learning_buddy.quiz.entity.Choice;
 import dev.pawin.backend_learning_buddy.quiz.entity.Question;
 import dev.pawin.backend_learning_buddy.quiz.entity.Quiz;
@@ -16,6 +17,9 @@ public interface QuizMapper {
     @Mapping(target = "quizId", source = "id")
     @Mapping(target = "courseId", source = "course.id")
     QuizExamDetailResponse toQuizExamDetailResponse(Quiz quiz);
+
+    @Mapping(target = "courseId", source = "course.id")
+    QuizMetadataResponse toQuizMetadataResponse(Quiz quiz);
 
     @Mapping(target = "topicId", source = "topic.id")
     @Mapping(target = "questionType", expression = "java(question.getQuestionType().name())")
