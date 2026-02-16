@@ -23,6 +23,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,7 +42,7 @@ public class AsyncQuizGenerationService {
     private final TransactionTemplate transactionTemplate;
 
     @Async("quizTaskExecutor")
-    public void generateQuizPreviewAsync(Long jobId, GenerateQuizRequest request) {
+    public void generateQuizPreviewAsync(UUID jobId, GenerateQuizRequest request) {
         logger.info("Starting async quiz generation for job ID: {}", jobId);
 
         try {
@@ -99,7 +100,7 @@ public class AsyncQuizGenerationService {
 
     private List<QuizPreviewResponse.GeneratedQuestion> processTopic(
             TopicQuizConfig topicConfig,
-            Long jobId,
+            UUID jobId,
             AtomicInteger completedCounter,
             int totalTopics
     ) {
@@ -177,25 +178,28 @@ public class AsyncQuizGenerationService {
                 .build();
     }
 
-    protected void updateJobStatus(Long jobId, JobStatus status) {
+    protected void updateJobStatus(UUID jobId, JobStatus status) {
         transactionTemplate.executeWithoutResult(txStatus -> {
-            QuizPreviewJob job = jobRepository.findById(jobId)
+            QuizPreviewJob job = jobRepository.findByJobId(jobId)
                     .orElseThrow(() -> new IllegalArgumentException("Job not found: " + jobId));
             job.setStatus(status);
             jobRepository.save(job);
         });
     }
 
-    protected synchronized void updateJobProgressAtomic(Long jobId, Integer progress, Integer completed) {
-        // Use atomic UPDATE to prevent race conditions
+    protected synchronized void updateJobProgressAtomic(UUID jobId, Integer progress, Integer completed) {
         transactionTemplate.executeWithoutResult(txStatus -> {
-            jobRepository.updateProgressAtomic(jobId, progress, completed);
+            QuizPreviewJob job = jobRepository.findByJobId(jobId)
+                    .orElseThrow(() -> new IllegalArgumentException("Job not found: " + jobId));
+            job.setProgressPercent(progress);
+            job.setCompletedTopics(completed);
+            jobRepository.save(job);
         });
     }
 
-    protected void updateJobCompleted(Long jobId, String resultJson) {
+    protected void updateJobCompleted(UUID jobId, String resultJson) {
         transactionTemplate.executeWithoutResult(txStatus -> {
-            QuizPreviewJob job = jobRepository.findById(jobId)
+            QuizPreviewJob job = jobRepository.findByJobId(jobId)
                     .orElseThrow(() -> new IllegalArgumentException("Job not found: " + jobId));
             job.setStatus(JobStatus.COMPLETED);
             job.setProgressPercent(100);
@@ -205,9 +209,9 @@ public class AsyncQuizGenerationService {
         });
     }
 
-    protected void markJobFailed(Long jobId, String errorMessage) {
+    protected void markJobFailed(UUID jobId, String errorMessage) {
         transactionTemplate.executeWithoutResult(txStatus -> {
-            QuizPreviewJob job = jobRepository.findById(jobId)
+            QuizPreviewJob job = jobRepository.findByJobId(jobId)
                     .orElseThrow(() -> new IllegalArgumentException("Job not found: " + jobId));
             job.setStatus(JobStatus.FAILED);
             job.setErrorMessage(errorMessage);

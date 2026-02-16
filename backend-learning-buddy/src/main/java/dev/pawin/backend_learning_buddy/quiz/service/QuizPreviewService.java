@@ -14,11 +14,15 @@ import dev.pawin.backend_learning_buddy.course.repository.CourseRepository;
 import dev.pawin.backend_learning_buddy.course.repository.EnrollmentRepository;
 import dev.pawin.backend_learning_buddy.course.entity.Course;
 import dev.pawin.backend_learning_buddy.auth.entity.User;
+import dev.pawin.backend_learning_buddy.quiz.event.QuizJobStartedEvent;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.UUID;
 
@@ -32,6 +36,7 @@ public class QuizPreviewService {
     private final CourseRepository courseRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final AsyncQuizGenerationService asyncQuizGenerationService;
+    private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional
@@ -55,8 +60,8 @@ public class QuizPreviewService {
         job = jobRepository.save(job);
         logger.info("Created quiz preview job with ID: {}", jobId);
 
-        // Start async processing
-        asyncQuizGenerationService.generateQuizPreviewAsync(job.getId(), request);
+        // Publish event to trigger async processing after transaction commits
+        eventPublisher.publishEvent(new QuizJobStartedEvent(job.getJobId(), request));
 
         return JobStartResponse.builder()
                 .jobId(jobId.toString())
@@ -111,5 +116,11 @@ public class QuizPreviewService {
                 throw new IllegalArgumentException("You don't have access to topic: " + topicConfig.getTopicId());
             }
         }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onQuizJobStarted(QuizJobStartedEvent event) {
+        logger.info("Transaction committed, starting async processing for job: {}", event.getJobId());
+        asyncQuizGenerationService.generateQuizPreviewAsync(event.getJobId(), event.getRequest());
     }
 }
