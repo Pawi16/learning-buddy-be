@@ -13,10 +13,21 @@ doc/
 ├── README.md                 # This file
 └── schemas/                  # JSON schemas for validation
     ├── requests/             # Request body schemas
-    │   └── process-pdf.json
+    │   ├── process-pdf.json
+    │   ├── generate-quiz.json
+    │   ├── generate-flashcard.json
+    │   ├── quiz-config.json
+    │   ├── flashcard-config.json
+    │   └── question-type-request.json
     └── responses/            # Response body schemas
         ├── health.json
-        └── process-pdf.json
+        ├── process-pdf.json
+        ├── generate-quiz.json
+        ├── generate-flashcard.json
+        ├── question.json
+        ├── choice.json
+        ├── flashcard-item.json
+        └── error.json
 ```
 
 ## 🚀 Quick Start
@@ -68,10 +79,21 @@ This updates:
 
 **`schemas/requests/`** - Request validation schemas
 - `process-pdf.json` - Schema for PDF upload requests
+- `generate-quiz.json` - Schema for quiz generation requests
+- `generate-flashcard.json` - Schema for flashcard generation requests
+- `quiz-config.json` - Schema for quiz configuration
+- `flashcard-config.json` - Schema for flashcard configuration
+- `question-type-request.json` - Schema for question type specifications
 
 **`schemas/responses/`** - Response validation schemas
 - `health.json` - Schema for health check response
 - `process-pdf.json` - Schema for processed PDF topics
+- `generate-quiz.json` - Schema for quiz generation responses
+- `generate-flashcard.json` - Schema for flashcard generation responses
+- `question.json` - Schema for quiz question responses
+- `choice.json` - Schema for quiz choice responses
+- `flashcard-item.json` - Schema for flashcard item responses
+- `error.json` - Schema for error responses
 
 **Example validation:**
 ```python

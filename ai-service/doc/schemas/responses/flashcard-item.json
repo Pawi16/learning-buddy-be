@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.learning-buddy.ai/schemas/responses/flashcard-item.json",
+  "title": "Flashcard Item Response",
+  "description": "A single flashcard with front and back text",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Card sequence number (1, 2, 3...)"
+    },
+    "front_text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The question, term, or concept (Front side)"
+    },
+    "back_text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The answer, definition, or explanation (Back side)"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["Definition", "Concept", "Pro/Con"],
+      "description": "Type of information"
+    }
+  },
+  "required": ["id", "front_text", "back_text", "category"],
+  "additionalProperties": false
+}

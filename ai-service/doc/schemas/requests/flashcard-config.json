@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.learning-buddy.ai/schemas/requests/flashcard-config.json",
+  "title": "Flashcard Configuration",
+  "description": "Configuration for flashcard generation",
+  "type": "object",
+  "properties": {
+    "amount": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of flashcards to generate"
+    }
+  },
+  "required": ["amount"],
+  "additionalProperties": false
+}

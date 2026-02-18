@@ -224,7 +224,150 @@ Returns a quiz with generated questions:
 
 ---
 
-### 3. Process PDF
+### 3. Generate Flashcard
+
+Generate flashcards from topic content using AI.
+
+**Endpoint:** `POST /api/v1/generate-flashcard`
+
+**Content-Type:** `application/json`
+
+#### Request Parameters
+
+| Parameter     | Type   | Required | Description                              |
+|---------------|--------|----------|------------------------------------------|
+| topicName     | string | Yes      | Name of the topic to generate flashcards for |
+| topicContent  | string | Yes      | Content/text about the topic             |
+| config        | object | Yes      | Flashcard configuration                  |
+
+#### Config Structure
+
+| Field   | Type   | Required | Description                              |
+|---------|--------|----------|------------------------------------------|
+| amount  | int    | Yes      | Number of flashcards to generate         |
+
+#### Request Examples
+
+```bash
+curl -X POST \
+  http://localhost:8000/api/v1/generate-flashcard \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topicName": "Builder Pattern",
+    "topicContent": "The Builder pattern is a creational design pattern that separates the construction of a complex object from its representation, allowing the same construction process to create different representations.",
+    "config": {
+      "amount": 5
+    }
+  }'
+```
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/api/v1/generate-flashcard",
+    json={
+        "topicName": "Builder Pattern",
+        "topicContent": "The Builder pattern is a creational design pattern that separates the construction of a complex object from its representation.",
+        "config": {"amount": 5}
+    }
+)
+flashcard_deck = response.json()
+print(f"Generated {len(flashcard_deck['cards'])} flashcards")
+```
+
+```javascript
+fetch("http://localhost:8000/api/v1/generate-flashcard", {
+  method: "POST",
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    topicName: "Builder Pattern",
+    topicContent: "The Builder pattern is a creational design pattern that separates the construction of a complex object from its representation.",
+    config: {amount: 5}
+  })
+})
+.then(response => response.json())
+.then(deck => console.log(`Generated ${deck.cards.length} flashcards`));
+```
+
+#### Response
+
+**Success:** `200 OK`
+
+Returns a flashcard deck with generated cards:
+
+```json
+{
+  "topic_title": "Builder Pattern",
+  "cards": [
+    {
+      "id": 1,
+      "front_text": "What is the Builder pattern?",
+      "back_text": "A creational design pattern that separates the construction of a complex object from its representation.",
+      "category": "Definition"
+    },
+    {
+      "id": 2,
+      "front_text": "Builder pattern improves code readability",
+      "back_text": "True: The Builder pattern improves readability by providing a clear, fluent API for object construction.",
+      "category": "Concept"
+    },
+    {
+      "id": 3,
+      "front_text": "Pros: Same construction process can create different representations",
+      "back_text": "Pro: The Builder pattern allows the same construction process to create different representations and formats.",
+      "category": "Pro/Con"
+    },
+    {
+      "id": 4,
+      "front_text": "What problem does the Builder pattern solve?",
+      "back_text": "It solves the problem of complex object construction with many optional parameters and configurations.",
+      "category": "Concept"
+    },
+    {
+      "id": 5,
+      "front_text": "Cons: Increases overall code complexity",
+      "back_text": "Con: The Builder pattern can increase code complexity and requires additional classes and interfaces.",
+      "category": "Pro/Con"
+    }
+  ]
+}
+```
+
+#### Response Schema
+
+| Field       | Type   | Description                              |
+|-------------|--------|------------------------------------------|
+| topic_title | string | Title of the topic                       |
+| cards       | array  | Array of flashcard objects               |
+
+#### Flashcard Schema
+
+| Field       | Type   | Description                              |
+|-------------|--------|------------------------------------------|
+| id          | int    | Card sequence number (1, 2, 3...)        |
+| front_text  | string | The question, term, or concept (Front)   |
+| back_text   | string | The answer, definition, or explanation (Back) |
+| category    | string | Type: Definition, Concept, or Pro/Con    |
+
+#### Error Responses
+
+| Status Code | Description                            | Response Body Example                                     |
+|-------------|----------------------------------------|----------------------------------------------------------|
+| 400         | Bad Request - Invalid flashcard config | See Error Handling section below                         |
+| 500         | Internal Server Error - Flashcard generation failed | See Error Handling section below                    |
+| 503         | Service Unavailable - AI service down  | See Error Handling section below                         |
+
+#### Validation Rules
+
+- `topicName` must be non-empty
+- `topicContent` must be non-empty
+- `config.amount` must be a positive integer (minimum: 1)
+- `category` in response will be one of: Definition, Concept, Pro/Con
+
+---
+
+### 4. Process PDF
 
 Upload and process a PDF file to extract topics with AI-generated summaries.
 
@@ -502,6 +645,95 @@ required:
   - is_correct
 ```
 
+### GenerateFlashcardRequest
+
+Request to generate flashcards from topic content.
+
+```yaml
+type: object
+properties:
+  topicName:
+    type: string
+    minLength: 1
+    description: Name of the topic
+  topicContent:
+    type: string
+    minLength: 1
+    description: Content text for the topic
+  config:
+    $ref: '#/FlashcardConfig'
+required:
+  - topicName
+  - topicContent
+  - config
+```
+
+### FlashcardConfig
+
+Configuration for flashcard generation.
+
+```yaml
+type: object
+properties:
+  amount:
+    type: integer
+    minimum: 1
+    description: Number of flashcards to generate
+required:
+  - amount
+```
+
+### FlashcardDeckResponse
+
+Response containing generated flashcards.
+
+```yaml
+type: object
+properties:
+  topic_title:
+    type: string
+    minLength: 1
+    description: Title of the topic
+  cards:
+    type: array
+    items:
+      $ref: '#/FlashcardItemResponse'
+    description: Generated flashcards
+required:
+  - topic_title
+  - cards
+```
+
+### FlashcardItemResponse
+
+A single flashcard.
+
+```yaml
+type: object
+properties:
+  id:
+    type: integer
+    minimum: 1
+    description: Card sequence number
+  front_text:
+    type: string
+    minLength: 1
+    description: The question, term, or concept
+  back_text:
+    type: string
+    minLength: 1
+    description: The answer, definition, or explanation
+  category:
+    type: string
+    enum: [Definition, Concept, Pro/Con]
+    description: Type of information
+required:
+  - id
+  - front_text
+  - back_text
+  - category
+```
+
 ---
 
 ## Interactive Documentation
@@ -585,15 +817,19 @@ Request and response schemas are available in `doc/schemas/` for validation:
 ### Request Schemas
 - `schemas/requests/process-pdf.json` - PDF processing request schema
 - `schemas/requests/generate-quiz.json` - Quiz generation request schema
+- `schemas/requests/generate-flashcard.json` - Flashcard generation request schema
 - `schemas/requests/quiz-config.json` - Quiz configuration schema
+- `schemas/requests/flashcard-config.json` - Flashcard configuration schema
 - `schemas/requests/question-type-request.json` - Question type specification schema
 
 ### Response Schemas
 - `schemas/responses/health.json` - Health check response schema
 - `schemas/responses/process-pdf.json` - PDF processing response schema
 - `schemas/responses/generate-quiz.json` - Quiz generation response schema
+- `schemas/responses/generate-flashcard.json` - Flashcard generation response schema
 - `schemas/responses/question.json` - Question response schema
 - `schemas/responses/choice.json` - Choice response schema
+- `schemas/responses/flashcard-item.json` - Flashcard item response schema
 - `schemas/responses/error.json` - Error response schema
 
 **Example validation with Python:**
@@ -620,6 +856,7 @@ except ValidationError as e:
 
 | Version | Date       | Changes                  |
 |---------|------------|--------------------------|
+| 0.3.0   | 2026-02-18 | Added flashcard generation endpoint |
 | 0.2.0   | 2026-02-05 | Added quiz generation endpoint, updated model to GLM-4.5, structured error responses |
 | 0.1.0   | 2026-01-24 | Initial release          |
 
