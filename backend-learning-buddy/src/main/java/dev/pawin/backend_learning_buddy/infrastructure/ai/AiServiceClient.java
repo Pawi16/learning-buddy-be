@@ -6,6 +6,8 @@ import dev.pawin.backend_learning_buddy.course.dto.TopicPreviewDto;
 import dev.pawin.backend_learning_buddy.infrastructure.ai.dto.AiErrorResponse;
 import dev.pawin.backend_learning_buddy.infrastructure.ai.dto.GenerateQuizAiRequest;
 import dev.pawin.backend_learning_buddy.infrastructure.ai.dto.GenerateQuizAiResponse;
+import dev.pawin.backend_learning_buddy.infrastructure.ai.dto.GenerateFlashcardAiRequest;
+import dev.pawin.backend_learning_buddy.infrastructure.ai.dto.GenerateFlashcardAiResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,6 +118,41 @@ public class AiServiceClient {
 
         } catch (ResourceAccessException e) {
             logger.error("AI Service is down during quiz generation");
+            throw new AiServiceException("AI Service is currently unavailable. Please try again later.", e);
+        }
+    }
+
+    public GenerateFlashcardAiResponse generateFlashcard(
+            String topicName,
+            String topicContent,
+            Integer amount
+    ) {
+        dev.pawin.backend_learning_buddy.infrastructure.ai.dto.FlashcardConfig config =
+                dev.pawin.backend_learning_buddy.infrastructure.ai.dto.FlashcardConfig.builder()
+                        .amount(amount)
+                        .build();
+
+        GenerateFlashcardAiRequest request = GenerateFlashcardAiRequest.builder()
+                .topicName(topicName)
+                .topicContent(topicContent)
+                .config(config)
+                .build();
+
+        try {
+            return restClient.post()
+                    .uri(aiServiceUrl + "/api/v1/generate-flashcard")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(request)
+                    .retrieve()
+                    .body(GenerateFlashcardAiResponse.class);
+
+        } catch (RestClientResponseException e) {
+            String friendlyMessage = extractErrorMessage(e);
+            logger.error("AI Service Flashcard Generation Error: {}", friendlyMessage);
+            throw new AiServiceException(friendlyMessage, e);
+
+        } catch (ResourceAccessException e) {
+            logger.error("AI Service is down during flashcard generation");
             throw new AiServiceException("AI Service is currently unavailable. Please try again later.", e);
         }
     }
