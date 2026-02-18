@@ -28,6 +28,11 @@ from app.exceptions.quiz_generation import (
     QuizParsingException,
     QuizRequestException,
 )
+from app.exceptions.flashcard_generation import (
+    FlashcardGenerationException,
+    FlashcardParsingException,
+    FlashcardRequestException,
+)
 
 __all__ = [
     # Base
@@ -50,4 +55,8 @@ __all__ = [
     "QuizGenerationException",
     "QuizParsingException",
     "QuizRequestException",
+    # Flashcard Generation
+    "FlashcardGenerationException",
+    "FlashcardParsingException",
+    "FlashcardRequestException",
 ]

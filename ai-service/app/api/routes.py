@@ -22,8 +22,10 @@ from app.exceptions.validation import (
 )
 from app.schemas.pdf import ProcessedTopic
 from app.schemas.quiz import GenerateQuizRequest, QuizResponse
-from app.services import llm_service, pdf_service, quiz_service
+from app.schemas.flashcard import GenerateFlashcardRequest, FlashcardDeckResponse
+from app.services import llm_service, pdf_service, quiz_service, flashcard_service
 from app.exceptions.quiz_generation import QuizGenerationException
+from app.exceptions.flashcard_generation import FlashcardGenerationException
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +84,23 @@ async def generate_quiz(request: GenerateQuizRequest) -> JSONResponse:
         logger.error(f"Unexpected error in quiz generation: {e}", exc_info=True)
         raise QuizGenerationException(
             message="Failed to generate quiz",
+            details=[str(e)]
+        )
+
+
+@router.post("/generate-flashcard")
+async def generate_flashcard(request: GenerateFlashcardRequest) -> JSONResponse:
+    """Generate flashcards from topic content using AI."""
+    logger.info(f"Generating flashcard for topic: {request.topicName}")
+    try:
+        result = flashcard_service.generate_flashcard(request)
+        return JSONResponse(content=jsonable_encoder(result))
+    except AppException:
+        raise  # Let global handler catch
+    except Exception as e:
+        logger.error(f"Unexpected error in flashcard generation: {e}", exc_info=True)
+        raise FlashcardGenerationException(
+            message="Failed to generate flashcard",
             details=[str(e)]
         )
 

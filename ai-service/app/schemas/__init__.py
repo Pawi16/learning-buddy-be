@@ -8,6 +8,11 @@ from app.schemas.quiz import (
     QuestionResponse,
     ChoiceResponse,
 )
+from app.schemas.flashcard import (
+    GenerateFlashcardRequest,
+    FlashcardDeckResponse,
+    FlashcardItemResponse,
+)
 
 __all__ = [
     "ProcessedTopic",
@@ -16,4 +21,7 @@ __all__ = [
     "QuizResponse",
     "QuestionResponse",
     "ChoiceResponse",
+    "GenerateFlashcardRequest",
+    "FlashcardDeckResponse",
+    "FlashcardItemResponse",
 ]

@@ -18,6 +18,9 @@ from app.exceptions.ai_service import (
 from app.exceptions.quiz_generation import (
     QuizGenerationException,
 )
+from app.exceptions.flashcard_generation import (
+    FlashcardGenerationException,
+)
 from app.exceptions.pdf_processing import (
     PDFParsingException,
     PDFCorruptedException,
