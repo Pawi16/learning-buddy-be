@@ -1,0 +1,27 @@
+# schemas/DeckJobStatusResponse.yaml
+type: object
+required:
+  - job_id
+  - status
+  - progress_percent
+properties:
+  job_id:
+    type: string
+    format: uuid
+  status:
+    type: string
+    enum: [QUEUED, PROCESSING, COMPLETED, FAILED]
+    description: Current state of the background job.
+  progress_percent:
+    type: integer
+    minimum: 0
+    maximum: 100
+    description: Estimated completion percentage.
+  error_message:
+    type: string
+    nullable: true
+    description: Only present if status is FAILED.
+  result:
+    nullable: true
+    allOf:
+      - $ref: "./DeckPreviewResponse.yaml" # <--- This is the key difference from Quizzes

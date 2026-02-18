@@ -14,4 +14,4 @@ properties:
     example: "QUEUED"
   message:
     type: string
-    example: "Quiz generation started. Please poll for results."
+    example: "Quiz/Flashcard generation started. Please poll for results."

@@ -782,13 +782,12 @@ paths:
           description: Deleted successfully
 
   #Flashcard
-  /decks/preview:
+  /decks/preview/jobs:
     post:
-      summary: Generate Flashcard Deck Preview via AI
+      summary: Start Flashcard Generation Job
       description: |
-        Accepts a list of topics and configuration (card count).
-        Sends request to AI Service to generate flashcards.
-        Returns a list of generated cards for the user to review/edit.
+        Starts a background job to generate flashcards from AI for multiple topics.
+        Returns a `job_id` immediately.
         **Use Case 13: Create Flashcards (AI Step)**
       tags: [Flashcards]
       security:
@@ -798,26 +797,47 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "./schemas/GenerateDeckRequest.yaml"
+              $ref: "./schemas/GenerateDeckRequest.yaml" # Keeps your original request
       responses:
-        "200":
-          description: AI Generation Successful
+        "202":
+          description: Job Accepted (Processing started)
           content:
             application/json:
               schema:
-                $ref: "./schemas/DeckPreviewResponse.yaml"
+                $ref: "./schemas/JobStartResponse.yaml" # You can REUSE this from Quizzes!
         "400":
           description: Validation Failed
           content:
             application/json:
               schema:
                 $ref: "./schemas/ErrorResponse.yaml"
-        "503":
-          description: AI Service Unavailable
+
+  /decks/preview/jobs/{jobId}:
+    get:
+      summary: Get Flashcard Generation Job Status
+      description: |
+        Retrieves the current status, progress, and final flashcard result.
+        Poll this endpoint every 2-3 seconds until `status` is 'COMPLETED'.
+      tags: [Flashcards]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: jobId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: The ID returned by the start endpoint.
+      responses:
+        "200":
+          description: Current Job Status
           content:
             application/json:
               schema:
-                $ref: "./schemas/ErrorResponse.yaml"
+                $ref: "./schemas/DeckJobStatusResponse.yaml" # NEW SCHEMA (See below)
+        "404":
+          description: Job Not Found
 
   /courses/{course_id}/decks:
     post:
