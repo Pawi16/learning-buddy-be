@@ -3,6 +3,9 @@ package dev.pawin.backend_learning_buddy.course.controller;
 import dev.pawin.backend_learning_buddy.course.dto.*;
 import dev.pawin.backend_learning_buddy.course.service.CourseService;
 import dev.pawin.backend_learning_buddy.course.service.EnrollmentService;
+import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckRequest;
+import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckResponse;
+import dev.pawin.backend_learning_buddy.flashcard.service.DeckService;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizRequest;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizSummaryResponse;
@@ -25,6 +28,7 @@ public class CourseController {
     private final CourseService courseService;
     private final EnrollmentService enrollmentService;
     private final QuizService quizService;
+    private final DeckService deckService;
 
     @PostMapping(value = "/preview", consumes = "multipart/form-data")
     public ResponseEntity<CoursePreviewResponse> previewCourse(
@@ -137,6 +141,16 @@ public class CourseController {
             Authentication authentication
     ) {
         CreateQuizResponse response = quizService.createQuiz(id, request, authentication.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/{id}/decks")
+    public ResponseEntity<CreateDeckResponse> createDeck(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateDeckRequest request,
+            Authentication authentication
+    ) {
+        CreateDeckResponse response = deckService.createDeck(id, request, authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
