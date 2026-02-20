@@ -906,13 +906,17 @@ paths:
                   $ref: "./schemas/DeckSummary.yaml"
   /decks/{id}:
     get:
-      summary: Get Deck Details
+      summary: Get deck Details
       description: |
         Fetches full deck data including metadata and list of flashcards.
         **Used in:**
         - Use Case 14 (To show current Title)
         - Use Case 15 (To show current Cards for editing)
         - Study Mode (To play the deck)
+
+        **Visibility Logic:** (looking from is_published)
+        - **Course Owner:** Returns deck detail (including drafts/unpublished).
+        - **Students/Others:** can't access this deck
       tags: [Flashcards]
       security:
         - bearerAuth: []
@@ -930,6 +934,8 @@ paths:
             application/json:
               schema:
                 $ref: "./schemas/DeckDetail.yaml"
+        "403":
+          description: Forbidden (Not the owner)
         "404":
           description: Deck not found
 
