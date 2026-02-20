@@ -5,6 +5,7 @@ import dev.pawin.backend_learning_buddy.course.service.CourseService;
 import dev.pawin.backend_learning_buddy.course.service.EnrollmentService;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckRequest;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckResponse;
+import dev.pawin.backend_learning_buddy.flashcard.dto.DeckSummaryResponse;
 import dev.pawin.backend_learning_buddy.flashcard.service.DeckService;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizRequest;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizResponse;
@@ -162,5 +163,15 @@ public class CourseController {
         List<QuizSummaryResponse> quizzes = quizService.getQuizzesByCourseId(
                 id, authentication.getName());
         return ResponseEntity.ok(quizzes);
+    }
+
+    @GetMapping("/{id}/decks")
+    public ResponseEntity<List<DeckSummaryResponse>> getCourseDecks(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        List<DeckSummaryResponse> decks = deckService.getDecksByCourseId(
+                id, authentication.getName());
+        return ResponseEntity.ok(decks);
     }
 }

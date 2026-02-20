@@ -1,20 +1,25 @@
 package dev.pawin.backend_learning_buddy.flashcard.service;
 
+import dev.pawin.backend_learning_buddy.auth.entity.User;
+import dev.pawin.backend_learning_buddy.auth.repository.UserRepository;
 import dev.pawin.backend_learning_buddy.course.entity.Course;
 import dev.pawin.backend_learning_buddy.course.entity.Topic;
 import dev.pawin.backend_learning_buddy.course.repository.CourseRepository;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckRequest;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckResponse;
+import dev.pawin.backend_learning_buddy.flashcard.dto.DeckSummaryResponse;
 import dev.pawin.backend_learning_buddy.flashcard.entity.Deck;
 import dev.pawin.backend_learning_buddy.flashcard.entity.Flashcard;
 import dev.pawin.backend_learning_buddy.flashcard.repository.DeckRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +27,7 @@ public class DeckService {
 
     private final DeckRepository deckRepository;
     private final CourseRepository courseRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public CreateDeckResponse createDeck(Long courseId, CreateDeckRequest request, String username) {
@@ -88,5 +94,23 @@ public class DeckService {
                 .deckId(savedDeck.getId())
                 .message("Deck created successfully")
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<DeckSummaryResponse> getDecksByCourseId(Long courseId, String username) {
+        // Validate course exists
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Course not found with id: " + courseId));
+
+        // Get current user
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Check if user is course owner
+        boolean isOwner = course.getCreator().getId().equals(currentUser.getId());
+
+        // Fetch deck summaries (owner sees all, others see only published)
+        return deckRepository.findDeckSummariesByCourseId(courseId, isOwner);
     }
 }
