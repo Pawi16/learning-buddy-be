@@ -916,7 +916,7 @@ paths:
 
         **Visibility Logic:** (looking from is_published)
         - **Course Owner:** Returns deck detail (including drafts/unpublished).
-        - **Students/Others:** can't access this deck
+        - **Students/Others:** can't access this deck if is_published is false
       tags: [Flashcards]
       security:
         - bearerAuth: []
