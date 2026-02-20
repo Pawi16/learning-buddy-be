@@ -7,6 +7,7 @@ import dev.pawin.backend_learning_buddy.course.entity.Topic;
 import dev.pawin.backend_learning_buddy.course.repository.CourseRepository;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckRequest;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckResponse;
+import dev.pawin.backend_learning_buddy.flashcard.dto.DeckDetailResponse;
 import dev.pawin.backend_learning_buddy.flashcard.dto.DeckSummaryResponse;
 import dev.pawin.backend_learning_buddy.flashcard.entity.Deck;
 import dev.pawin.backend_learning_buddy.flashcard.entity.Flashcard;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -112,5 +114,45 @@ public class DeckService {
 
         // Fetch deck summaries (owner sees all, others see only published)
         return deckRepository.findDeckSummariesByCourseId(courseId, isOwner);
+    }
+
+    @Transactional(readOnly = true)
+    public DeckDetailResponse getDeckById(Long deckId, String username) {
+        // 1. Fetch User
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 2. Fetch Deck with Flashcards
+        Deck deck = deckRepository.findDeckByIdWithFlashcards(deckId)
+                .orElseThrow(() -> new EntityNotFoundException("Deck not found"));
+
+        // 3. Check if user is course owner
+        boolean isOwner = deck.getCourse().getCreator().getId().equals(currentUser.getId());
+
+        // 4. Access control: course owner can access unpublished decks, others can only access published decks
+        if (!deck.getIsPublished() && !isOwner) {
+            throw new EntityNotFoundException("Deck not found with id: " + deckId);
+        }
+
+        // 5. Map Flashcards to DTOs (topics are lazily loaded but accessible)
+        List<DeckDetailResponse.CardDetailDto> cardDtos = deck.getFlashcards().stream()
+                .map(flashcard -> DeckDetailResponse.CardDetailDto.builder()
+                        .id(flashcard.getId())
+                        .topicId(flashcard.getTopic().getId())
+                        .frontText(flashcard.getFrontText())
+                        .backText(flashcard.getBackText())
+                        .build())
+                .collect(Collectors.toList());
+
+        // 6. Build and return response
+        return DeckDetailResponse.builder()
+                .deckId(deck.getId())
+                .courseId(deck.getCourse().getId())
+                .title(deck.getTitle())
+                .isPublished(deck.getIsPublished())
+                .createdAt(deck.getCreatedAt())
+                .updatedAt(deck.getUpdatedAt())
+                .cards(cardDtos)
+                .build();
     }
 }

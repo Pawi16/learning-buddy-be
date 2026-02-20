@@ -7,8 +7,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface DeckRepository extends JpaRepository<Deck, Long> {
+
+    @Query("SELECT d FROM Deck d LEFT JOIN FETCH d.flashcards WHERE d.id = :deckId")
+    Optional<Deck> findDeckByIdWithFlashcards(@Param("deckId") Long deckId);
 
     @Query("""
         SELECT new dev.pawin.backend_learning_buddy.flashcard.dto.DeckSummaryResponse(
