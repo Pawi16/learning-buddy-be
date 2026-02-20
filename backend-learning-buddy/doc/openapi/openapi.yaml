@@ -880,7 +880,12 @@ paths:
                 $ref: "./schemas/ErrorResponse.yaml"
 
     get:
-      summary: List all Flashcard Decks in a Course (Summary lightweight detail)
+      summary: |
+        Returns a list of flashcards for the specified course.
+        
+        **Visibility Logic:** (looking from is_published)
+        - **Course Owner:** Returns ALL flashcard (including drafts/unpublished).
+        - **Students/Others:** Returns ONLY `PUBLISHED` flashcard.
       tags: [Flashcards]
       security:
         - bearerAuth: []

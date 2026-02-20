@@ -20,3 +20,10 @@ properties:
   created_at:
     type: string
     format: date-time
+    description: "When the quiz was created"
+    example: "2023-10-27T10:00:00Z"
+  updated_at:
+    type: string
+    format: date-time
+    description: "When the quiz was updated"
+    example: "2023-10-28T10:00:00Z"
