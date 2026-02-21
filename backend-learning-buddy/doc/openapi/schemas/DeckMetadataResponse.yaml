@@ -1,0 +1,31 @@
+type: object
+description: "The lightweight updated quiz metadata (Header info)."
+required:
+  - id
+  - course_id
+  - title
+  - is_published
+  - created_at
+  - updated_at
+properties:
+  id:
+    type: integer
+    example: 101
+  course_id:
+    type: integer
+    description: "The ID of the course this quiz belongs to."
+    example: 55
+  title:
+    type: string
+    example: "Midterm Exam Revised"
+  is_published:
+    type: boolean
+    example: true
+  created_at:
+    type: string
+    format: date-time
+    example: "2026-02-13T10:30:00Z"
+  updated_at:
+    type: string
+    format: date-time
+    example: "2026-02-13T10:30:00Z"

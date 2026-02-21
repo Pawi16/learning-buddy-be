@@ -963,21 +963,21 @@ paths:
               $ref: "./schemas/UpdateDeckMetadataRequest.yaml"
       responses:
         "200":
-          description: Metadata Updated Successfully
+          description: Deck Metadata Updated Successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Deck metadata updated."
+                $ref: "./schemas/DeckMetadataResponse.yaml" # <--- Updated to return data
         "400":
-          description: Validation Failed
+          description: Validation Failed (Title is null)
           content:
             application/json:
               schema:
                 $ref: "./schemas/ErrorResponse.yaml"
+        "403":
+          description: Forbidden (Not the owner)
+        "404":
+          description: Deck Not Found
 
     # ------------------------------------------------------------------
     # USE CASE 15: Edit Flashcard Content (Bulk Update)
