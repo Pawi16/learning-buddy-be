@@ -2,6 +2,8 @@ package dev.pawin.backend_learning_buddy.flashcard.controller;
 
 import dev.pawin.backend_learning_buddy.flashcard.dto.DeckDetailResponse;
 import dev.pawin.backend_learning_buddy.flashcard.dto.DeckMetadataResponse;
+import dev.pawin.backend_learning_buddy.flashcard.dto.UpdateDeckContentRequest;
+import dev.pawin.backend_learning_buddy.flashcard.dto.UpdateDeckContentResponse;
 import dev.pawin.backend_learning_buddy.flashcard.dto.UpdateDeckMetadataRequest;
 import dev.pawin.backend_learning_buddy.flashcard.service.DeckService;
 import jakarta.validation.Valid;
@@ -33,6 +35,18 @@ public class DeckController {
             Authentication authentication
     ) {
         DeckMetadataResponse response = deckService.updateDeckMetadata(
+                id, authentication.getName(), request
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UpdateDeckContentResponse> updateDeckContent(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateDeckContentRequest request,
+            Authentication authentication
+    ) {
+        UpdateDeckContentResponse response = deckService.updateDeckContent(
                 id, authentication.getName(), request
         );
         return ResponseEntity.ok(response);
