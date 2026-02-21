@@ -8,7 +8,9 @@ import dev.pawin.backend_learning_buddy.course.repository.CourseRepository;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckRequest;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckResponse;
 import dev.pawin.backend_learning_buddy.flashcard.dto.DeckDetailResponse;
+import dev.pawin.backend_learning_buddy.flashcard.dto.DeckMetadataResponse;
 import dev.pawin.backend_learning_buddy.flashcard.dto.DeckSummaryResponse;
+import dev.pawin.backend_learning_buddy.flashcard.dto.UpdateDeckMetadataRequest;
 import dev.pawin.backend_learning_buddy.flashcard.entity.Deck;
 import dev.pawin.backend_learning_buddy.flashcard.entity.Flashcard;
 import dev.pawin.backend_learning_buddy.flashcard.repository.DeckRepository;
@@ -153,6 +155,43 @@ public class DeckService {
                 .createdAt(deck.getCreatedAt())
                 .updatedAt(deck.getUpdatedAt())
                 .cards(cardDtos)
+                .build();
+    }
+
+    @Transactional
+    public DeckMetadataResponse updateDeckMetadata(Long deckId, String username, UpdateDeckMetadataRequest request) {
+        // 1. Fetch Deck
+        Deck deck = deckRepository.findById(deckId)
+                .orElseThrow(() -> new EntityNotFoundException("Deck not found"));
+
+        // 2. Fetch User and validate ownership (course creator only)
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 3. Validate Ownership (course creator only)
+        if (!deck.getCourse().getCreator().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You do not have permission to edit this deck");
+        }
+
+        // 4. Update Title (always provided - required field with @NotBlank validation)
+        deck.setTitle(request.getTitle());
+
+        // 5. Partial Update: Is Published (optional, check if not null)
+        if (request.getIsPublished() != null) {
+            deck.setIsPublished(request.getIsPublished());
+        }
+
+        // 6. Save entity (updated_at is handled automatically by @PreUpdate in BaseEntity)
+        Deck savedDeck = deckRepository.save(deck);
+
+        // 7. Build and return DeckMetadataResponse
+        return DeckMetadataResponse.builder()
+                .id(savedDeck.getId())
+                .courseId(savedDeck.getCourse().getId())
+                .title(savedDeck.getTitle())
+                .isPublished(savedDeck.getIsPublished())
+                .createdAt(savedDeck.getCreatedAt())
+                .updatedAt(savedDeck.getUpdatedAt())
                 .build();
     }
 }

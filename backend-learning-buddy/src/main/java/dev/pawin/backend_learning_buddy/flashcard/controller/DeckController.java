@@ -1,7 +1,10 @@
 package dev.pawin.backend_learning_buddy.flashcard.controller;
 
 import dev.pawin.backend_learning_buddy.flashcard.dto.DeckDetailResponse;
+import dev.pawin.backend_learning_buddy.flashcard.dto.DeckMetadataResponse;
+import dev.pawin.backend_learning_buddy.flashcard.dto.UpdateDeckMetadataRequest;
 import dev.pawin.backend_learning_buddy.flashcard.service.DeckService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,6 +23,18 @@ public class DeckController {
             Authentication authentication
     ) {
         DeckDetailResponse response = deckService.getDeckById(id, authentication.getName());
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<DeckMetadataResponse> updateDeckMetadata(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateDeckMetadataRequest request,
+            Authentication authentication
+    ) {
+        DeckMetadataResponse response = deckService.updateDeckMetadata(
+                id, authentication.getName(), request
+        );
         return ResponseEntity.ok(response);
     }
 }
