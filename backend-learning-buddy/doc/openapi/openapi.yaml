@@ -1016,12 +1016,15 @@ paths:
                     type: string
                     example: "Deck content saved successfully."
         "400":
-          description: Validation Failed
+          description: Validation Failed (Title is null)
           content:
             application/json:
               schema:
                 $ref: "./schemas/ErrorResponse.yaml"
-
+        "403":
+          description: Forbidden (Not the owner)
+        "404":
+          description: Deck Not Found
     delete:
       summary: Delete Deck
       tags: [Flashcards]
