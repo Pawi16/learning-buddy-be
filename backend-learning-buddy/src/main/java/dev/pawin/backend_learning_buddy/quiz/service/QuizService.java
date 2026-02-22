@@ -40,10 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -171,14 +168,24 @@ public class QuizService {
                         throw new EntityNotFoundException("Quiz not found with id: " + quizId);
                 }
 
-                // Create QuizAttempt record
-                QuizAttempt quizAttempt = QuizAttempt.builder()
-                                .user(currentUser)
-                                .quiz(quiz)
-                                .startTime(LocalDateTime.now())
-                                .status(AttemptStatus.IN_PROGRESS)
-                                .build();
-                quizAttemptRepository.save(quizAttempt);
+                // Check for existing IN_PROGRESS attempt
+                Optional<QuizAttempt> existingAttempt = quizAttemptRepository
+                                .findByUserIdAndQuizIdAndStatus(currentUser.getId(), quizId, AttemptStatus.IN_PROGRESS);
+
+                QuizAttempt quizAttempt;
+                if (existingAttempt.isPresent()) {
+                        // Reuse existing IN_PROGRESS attempt
+                        quizAttempt = existingAttempt.get();
+                } else {
+                        // Create new QuizAttempt record
+                        quizAttempt = QuizAttempt.builder()
+                                        .user(currentUser)
+                                        .quiz(quiz)
+                                        .startTime(LocalDateTime.now())
+                                        .status(AttemptStatus.IN_PROGRESS)
+                                        .build();
+                        quizAttemptRepository.save(quizAttempt);
+                }
 
                 // Map to response DTO (security fields automatically excluded)
                 return quizMapper.toQuizExamDetailResponse(quiz);
