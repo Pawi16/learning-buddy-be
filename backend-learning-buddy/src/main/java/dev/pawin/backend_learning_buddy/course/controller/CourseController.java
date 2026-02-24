@@ -9,8 +9,11 @@ import dev.pawin.backend_learning_buddy.flashcard.dto.DeckSummaryResponse;
 import dev.pawin.backend_learning_buddy.flashcard.service.DeckService;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizRequest;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizResponse;
+import dev.pawin.backend_learning_buddy.quiz.dto.QuizJobSummaryResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizSummaryResponse;
+import dev.pawin.backend_learning_buddy.quiz.service.QuizPreviewService;
 import dev.pawin.backend_learning_buddy.quiz.service.QuizService;
+import dev.pawin.backend_learning_buddy.common.enumeration.JobStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,6 +33,7 @@ public class CourseController {
     private final EnrollmentService enrollmentService;
     private final QuizService quizService;
     private final DeckService deckService;
+    private final QuizPreviewService quizPreviewService;
 
     @PostMapping(value = "/preview", consumes = "multipart/form-data")
     public ResponseEntity<CoursePreviewResponse> previewCourse(
@@ -163,6 +167,17 @@ public class CourseController {
         List<QuizSummaryResponse> quizzes = quizService.getQuizzesByCourseId(
                 id, authentication.getName());
         return ResponseEntity.ok(quizzes);
+    }
+
+    @GetMapping("/{id}/quiz-jobs")
+    public ResponseEntity<List<QuizJobSummaryResponse>> getCourseQuizJobs(
+            @PathVariable Long id,
+            @RequestParam(required = false) JobStatus status,
+            Authentication authentication
+    ) {
+        List<QuizJobSummaryResponse> jobs = quizPreviewService.getJobsByCourseId(
+                id, authentication.getName(), status);
+        return ResponseEntity.ok(jobs);
     }
 
     @GetMapping("/{id}/decks")

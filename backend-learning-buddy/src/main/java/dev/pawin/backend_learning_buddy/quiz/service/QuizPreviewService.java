@@ -7,6 +7,7 @@ import dev.pawin.backend_learning_buddy.common.exception.QuizJobNotFoundExceptio
 import dev.pawin.backend_learning_buddy.quiz.dto.GenerateQuizRequest;
 import dev.pawin.backend_learning_buddy.quiz.dto.JobStartResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.JobStatusResponse;
+import dev.pawin.backend_learning_buddy.quiz.dto.QuizJobSummaryResponse;
 import dev.pawin.backend_learning_buddy.quiz.dto.QuizPreviewResponse;
 import dev.pawin.backend_learning_buddy.quiz.entity.QuizPreviewJob;
 import dev.pawin.backend_learning_buddy.quiz.repository.QuizPreviewJobRepository;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -106,6 +108,8 @@ public class QuizPreviewService {
 
         return JobStatusResponse.builder()
                 .jobId(job.getJobId().toString())
+                .courseId(job.getCourse().getId())
+                .courseTitle(job.getCourse().getTitle())
                 .status(job.getStatus().name())
                 .progressPercent(job.getProgressPercent())
                 .errorMessage(job.getErrorMessage())
@@ -148,5 +152,21 @@ public class QuizPreviewService {
     public void onQuizJobStarted(QuizJobStartedEvent event) {
         logger.info("Transaction committed, starting async processing for job: {}", event.getJobId());
         asyncQuizGenerationService.generateQuizPreviewAsync(event.getJobId(), event.getRequest());
+    }
+
+    @Transactional(readOnly = true)
+    public List<QuizJobSummaryResponse> getJobsByCourseId(Long courseId, String username, JobStatus status) {
+        logger.info("Fetching quiz jobs for course {} by user {}", courseId, username);
+
+        // Verify course ownership
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new EntityNotFoundException("Course not found: " + courseId));
+
+        if (!course.getCreator().getUsername().equals(username)) {
+            throw new AccessDeniedException("You do not have permission to view jobs for this course.");
+        }
+
+        // Fetch jobs using efficient query (no N+1)
+        return jobRepository.findJobSummariesByCourseId(courseId, status);
     }
 }
