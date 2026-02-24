@@ -495,7 +495,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./schemas/JobStartResponse.yaml"
+                $ref: "./schemas/QuizJobStartResponse.yaml"
         "400":
           description: Bad Request.
           content:
@@ -525,9 +525,43 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "./schemas/JobStatusResponse.yaml"
+                $ref: "./schemas/QuizJobStatusResponse.yaml"
         "404":
           description: Job Not Found
+  /courses/{course_id}/quiz-jobs:
+    get:
+      summary: Get Active Quiz Jobs for a Course
+      description: |
+        Returns a list of quiz generation jobs for a specific course.
+        Useful for showing pending/processing/compleated tasks on the course dashboard.
+      tags: [Courses, Quizzes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_id
+          schema:
+            type: integer
+          required: true
+          description: The ID of the course.
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [QUEUED, PROCESSING, COMPLETED, FAILED]
+          required: false
+          description: Filter jobs by status. If omitted, returns all jobs.
+      responses:
+        "200":
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "./schemas/QuizJobSummary.yaml"
+        "403":
+          description: Forbidden (Not the owner)
   /courses/{course_id}/quizzes:
     post:
       summary: Save New Quiz
