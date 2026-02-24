@@ -3,6 +3,7 @@ package dev.pawin.backend_learning_buddy.quiz.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +17,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GenerateQuizRequest {
+
+    @NotNull(message = "Course ID is required")
+    @JsonProperty("course_id")
+    private Long courseId;
 
     @Valid
     @NotEmpty(message = "At least one topic is required")

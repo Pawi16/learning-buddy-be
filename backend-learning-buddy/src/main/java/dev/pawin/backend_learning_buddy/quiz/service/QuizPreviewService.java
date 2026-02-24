@@ -15,10 +15,12 @@ import dev.pawin.backend_learning_buddy.course.repository.EnrollmentRepository;
 import dev.pawin.backend_learning_buddy.course.entity.Course;
 import dev.pawin.backend_learning_buddy.auth.entity.User;
 import dev.pawin.backend_learning_buddy.quiz.event.QuizJobStartedEvent;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
@@ -43,13 +45,17 @@ public class QuizPreviewService {
     public JobStartResponse startQuizGenerationJob(GenerateQuizRequest request, User user) {
         logger.info("Starting quiz generation job for user: {}", user.getUsername());
 
+        // Validate course ownership and get course entity
+        Course course = validateCourseOwnership(request.getCourseId(), user);
+
         // Pre-flight validation: verify user has access to all topics
         validateTopicAccess(request, user);
 
-        // Create job entity
+        // Create job entity with course association
         UUID jobId = UUID.randomUUID();
         QuizPreviewJob job = QuizPreviewJob.builder()
                 .jobId(jobId)
+                .course(course)
                 .user(user)
                 .status(JobStatus.QUEUED)
                 .progressPercent(0)
@@ -76,9 +82,16 @@ public class QuizPreviewService {
 
         QuizPreviewJob job = jobRepository.findByJobId(jobId)
                 .orElseThrow(() -> new QuizJobNotFoundException("Quiz job not found: " + jobId));
-        // Verify ownership
+
+        // Verify ownership - user must be the job creator
         if (!job.getUser().getId().equals(user.getId())) {
             throw new QuizJobNotFoundException("Quiz job not found: " + jobId);
+        }
+
+        // Additional check: verify user still owns the course
+        if (job.getCourse().getCreator() == null ||
+                !job.getCourse().getCreator().getId().equals(user.getId())) {
+            throw new AccessDeniedException("Access to this job has been revoked.");
         }
 
         // Parse result if completed
@@ -98,6 +111,19 @@ public class QuizPreviewService {
                 .errorMessage(job.getErrorMessage())
                 .result(result)
                 .build();
+    }
+
+    private Course validateCourseOwnership(Long courseId, User user) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new EntityNotFoundException("Course not found with id: " + courseId));
+
+        // Check if user is the course creator
+        if (course.getCreator() == null || !course.getCreator().getId().equals(user.getId())) {
+            throw new AccessDeniedException(
+                    "You do not have permission to generate quiz previews for this course.");
+        }
+
+        return course;
     }
 
     private void validateTopicAccess(GenerateQuizRequest request, User user) {

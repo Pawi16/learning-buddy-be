@@ -2,6 +2,7 @@ package dev.pawin.backend_learning_buddy.quiz.entity;
 
 import dev.pawin.backend_learning_buddy.common.entity.BaseEntity;
 import dev.pawin.backend_learning_buddy.common.enumeration.JobStatus;
+import dev.pawin.backend_learning_buddy.course.entity.Course;
 import dev.pawin.backend_learning_buddy.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,10 @@ public class QuizPreviewJob extends BaseEntity {
     @Column(name = "job_id", nullable = false, unique = true)
     @JdbcTypeCode(SqlTypes.UUID)
     private UUID jobId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id", nullable = false)
+    private Course course;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
