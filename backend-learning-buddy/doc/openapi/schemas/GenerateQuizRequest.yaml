@@ -1,7 +1,11 @@
 type: object
 required:
+  - course_id
   - quiz_topics
 properties:
+  course_id:
+    type: integer
+    description: "ID of the course (for ownership validation)"
   quiz_topics:
     type: array
     items:
