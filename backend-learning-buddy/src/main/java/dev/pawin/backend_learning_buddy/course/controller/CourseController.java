@@ -5,7 +5,9 @@ import dev.pawin.backend_learning_buddy.course.service.CourseService;
 import dev.pawin.backend_learning_buddy.course.service.EnrollmentService;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckRequest;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckResponse;
+import dev.pawin.backend_learning_buddy.flashcard.dto.DeckJobSummaryResponse;
 import dev.pawin.backend_learning_buddy.flashcard.dto.DeckSummaryResponse;
+import dev.pawin.backend_learning_buddy.flashcard.service.DeckPreviewService;
 import dev.pawin.backend_learning_buddy.flashcard.service.DeckService;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizRequest;
 import dev.pawin.backend_learning_buddy.quiz.dto.CreateQuizResponse;
@@ -34,6 +36,7 @@ public class CourseController {
     private final QuizService quizService;
     private final DeckService deckService;
     private final QuizPreviewService quizPreviewService;
+    private final DeckPreviewService deckPreviewService;
 
     @PostMapping(value = "/preview", consumes = "multipart/form-data")
     public ResponseEntity<CoursePreviewResponse> previewCourse(
@@ -176,6 +179,17 @@ public class CourseController {
             Authentication authentication
     ) {
         List<QuizJobSummaryResponse> jobs = quizPreviewService.getJobsByCourseId(
+                id, authentication.getName(), status);
+        return ResponseEntity.ok(jobs);
+    }
+
+    @GetMapping("/{id}/deck-jobs")
+    public ResponseEntity<List<DeckJobSummaryResponse>> getCourseDeckJobs(
+            @PathVariable Long id,
+            @RequestParam(required = false) JobStatus status,
+            Authentication authentication
+    ) {
+        List<DeckJobSummaryResponse> jobs = deckPreviewService.getJobsByCourseId(
                 id, authentication.getName(), status);
         return ResponseEntity.ok(jobs);
     }

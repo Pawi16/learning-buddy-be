@@ -17,6 +17,12 @@ public class DeckJobStatusResponse {
     @JsonProperty("job_id")
     private String jobId;
 
+    @JsonProperty("course_id")
+    private Long courseId;
+
+    @JsonProperty("course_title")
+    private String courseTitle;
+
     private String status;
 
     @JsonProperty("progress_percent")
