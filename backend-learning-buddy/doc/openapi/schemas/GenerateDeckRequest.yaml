@@ -1,7 +1,11 @@
 type: object
 required:
+  - course_id
   - deck_topics
 properties:
+  course_id:
+    type: integer
+    description: "ID of the course to generate the deck for"
   deck_topics:
     type: array
     items:

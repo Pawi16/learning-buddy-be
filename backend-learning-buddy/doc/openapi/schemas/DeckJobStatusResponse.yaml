@@ -8,6 +8,12 @@ properties:
   job_id:
     type: string
     format: uuid
+  course_id:
+    type: integer
+    description: "ID of the course"
+  course_title:
+    type: string
+    description: "Title of the course"
   status:
     type: string
     enum: [QUEUED, PROCESSING, COMPLETED, FAILED]

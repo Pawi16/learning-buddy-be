@@ -872,7 +872,40 @@ paths:
                 $ref: "./schemas/DeckJobStatusResponse.yaml" # NEW SCHEMA (See below)
         "404":
           description: Job Not Found
-
+  /courses/{course_id}/deck-jobs:
+    get:
+      summary: Get Active Deck Jobs for a Course
+      description: |
+        Returns a list of deck generation jobs for a specific course.
+        Useful for showing pending/processing/completed tasks on the course dashboard.
+      tags: [Courses, Decks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: course_id
+          schema:
+            type: integer
+          required: true
+          description: The ID of the course.
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [QUEUED, PROCESSING, COMPLETED, FAILED]
+          required: false
+          description: Filter jobs by status. If omitted, returns all jobs.
+      responses:
+        "200":
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "./schemas/DeckJobSummary.yaml"
+        "403":
+          description: Forbidden (Not the owner)
   /courses/{course_id}/decks:
     post:
       summary: Save New Flashcard Deck (Use Case 13 Steps 20-23)
