@@ -7,6 +7,7 @@ import dev.pawin.backend_learning_buddy.common.exception.CourseJobNotFoundExcept
 import dev.pawin.backend_learning_buddy.auth.entity.User;
 import dev.pawin.backend_learning_buddy.course.dto.CourseJobStartResponse;
 import dev.pawin.backend_learning_buddy.course.dto.CourseJobStatusResponse;
+import dev.pawin.backend_learning_buddy.course.dto.CourseJobSummaryResponse;
 import dev.pawin.backend_learning_buddy.course.dto.CoursePreviewResponse;
 import dev.pawin.backend_learning_buddy.course.dto.GenerateCoursePreviewRequest;
 import dev.pawin.backend_learning_buddy.course.entity.CoursePreviewJob;
@@ -22,6 +23,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -51,6 +53,8 @@ public class CoursePreviewService {
         CoursePreviewJob job = CoursePreviewJob.builder()
                 .jobId(jobId)
                 .user(user)
+                .title(request.getTitle())
+                .description(request.getDescription())
                 .status(JobStatus.QUEUED)
                 .build();
 
@@ -107,6 +111,12 @@ public class CoursePreviewService {
                 .errorMessage(job.getErrorMessage())
                 .result(result)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CourseJobSummaryResponse> getCoursePreviewJobs(String username, JobStatus status) {
+        logger.info("Fetching course preview jobs for user: {}", username);
+        return jobRepository.findJobSummariesByUsername(username, status);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

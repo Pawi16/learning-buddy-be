@@ -71,6 +71,16 @@ public class CourseController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 
+    @GetMapping("/preview/jobs")
+    public ResponseEntity<List<CourseJobSummaryResponse>> getCoursePreviewJobs(
+            @RequestParam(required = false) JobStatus status,
+            Authentication authentication
+    ) {
+        List<CourseJobSummaryResponse> jobs = coursePreviewService.getCoursePreviewJobs(
+                authentication.getName(), status);
+        return ResponseEntity.ok(jobs);
+    }
+
     @GetMapping("/preview/jobs/{jobId}")
     public ResponseEntity<CourseJobStatusResponse> getCoursePreviewJobStatus(
             @PathVariable UUID jobId,
