@@ -151,6 +151,32 @@ paths:
               schema:
                 $ref: "./schemas/ErrorResponse.yaml"
 
+    get:
+      summary: Get all course preview jobs for current user
+      description: |
+        Returns a list of all course preview jobs for the authenticated user.
+        Useful for showing pending/processing/completed course generation tasks.
+      tags: [Courses]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [QUEUED, PROCESSING, COMPLETED, FAILED]
+          required: false
+          description: Filter jobs by status. If omitted, returns all jobs.
+      responses:
+        "200":
+          description: List of course preview jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "./schemas/CourseJobSummaryResponse.yaml"
+
   /courses/preview/jobs/{jobId}:
     get:
       summary: Get course preview job status

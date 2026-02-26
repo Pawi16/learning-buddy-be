@@ -1,0 +1,21 @@
+# schemas/CourseJobSummaryResponse.yaml
+type: object
+properties:
+  job_id:
+    type: string
+    format: uuid
+  title:
+    type: string
+    description: "Title of the course being previewed"
+  description:
+    type: string
+    description: "Description of the course being previewed"
+  status:
+    type: string
+    enum: [QUEUED, PROCESSING, COMPLETED, FAILED]
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    type: string
+    format: date-time
