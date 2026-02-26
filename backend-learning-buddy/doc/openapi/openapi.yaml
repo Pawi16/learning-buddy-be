@@ -111,6 +111,76 @@ paths:
               schema:
                 $ref: "./schemas/ErrorResponse.yaml"
 
+  /courses/preview/jobs:
+    post:
+      summary: Start course preview job
+      description: |
+        Creates an asynchronous job to generate a course preview from a PDF.
+        Returns immediately with a job ID. Poll the status endpoint to get results.
+      tags: [Courses]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - title
+                - file
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "202":
+          description: Job started successfully
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/CourseJobStartResponse.yaml"
+        "400":
+          description: Validation Failed
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/ErrorResponse.yaml"
+
+  /courses/preview/jobs/{jobId}:
+    get:
+      summary: Get course preview job status
+      description: |
+        Poll this endpoint to check the status of a course preview job.
+        Returns the result when status is COMPLETED.
+      tags: [Courses]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/CourseJobStatusResponse.yaml"
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/ErrorResponse.yaml"
+
   /courses:
     get:
       summary: Search & List Public Courses

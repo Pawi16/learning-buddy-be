@@ -1,0 +1,20 @@
+type: object
+required:
+  - job_id
+  - status
+properties:
+  job_id:
+    type: string
+    format: uuid
+  status:
+    type: string
+    enum: [QUEUED, PROCESSING, COMPLETED, FAILED]
+    description: Current state of the background job.
+  error_message:
+    type: string
+    nullable: true
+    description: Only present if status is FAILED.
+  result:
+    nullable: true
+    allOf:
+      - $ref: "./CoursePreviewResponse.yaml"
