@@ -57,15 +57,23 @@ public class CourseService {
             throw new IllegalArgumentException("Only PDF files are allowed. Received: " + file.getContentType());
         }
 
-        // Call the AI Microservice
-        List<TopicPreviewDto> topics = aiServiceClient.generateCoursePreview(file);
+        try {
+            // Call the AI Microservice
+            List<TopicPreviewDto> topics = aiServiceClient.generateCoursePreview(
+                    file.getOriginalFilename(),
+                    file.getContentType(),
+                    file.getBytes()
+            );
 
-        // Construct the Response
-        return CoursePreviewResponse.builder()
-                .title(title)
-                .topics(topics)
-                .description(description)
-                .build();
+            // Construct the Response
+            return CoursePreviewResponse.builder()
+                    .title(title)
+                    .topics(topics)
+                    .description(description)
+                    .build();
+        } catch (java.io.IOException e) {
+            throw new IllegalArgumentException("Failed to read file content", e);
+        }
     }
 
     @Transactional

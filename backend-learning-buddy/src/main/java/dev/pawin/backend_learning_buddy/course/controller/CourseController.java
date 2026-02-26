@@ -3,6 +3,7 @@ package dev.pawin.backend_learning_buddy.course.controller;
 import dev.pawin.backend_learning_buddy.course.dto.*;
 import dev.pawin.backend_learning_buddy.course.service.CourseService;
 import dev.pawin.backend_learning_buddy.course.service.EnrollmentService;
+import dev.pawin.backend_learning_buddy.course.service.CoursePreviewService;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckRequest;
 import dev.pawin.backend_learning_buddy.flashcard.dto.CreateDeckResponse;
 import dev.pawin.backend_learning_buddy.flashcard.dto.DeckJobSummaryResponse;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/courses")
@@ -37,6 +39,7 @@ public class CourseController {
     private final DeckService deckService;
     private final QuizPreviewService quizPreviewService;
     private final DeckPreviewService deckPreviewService;
+    private final CoursePreviewService coursePreviewService;
 
     @PostMapping(value = "/preview", consumes = "multipart/form-data")
     public ResponseEntity<CoursePreviewResponse> previewCourse(
@@ -45,6 +48,38 @@ public class CourseController {
             @RequestParam("file") MultipartFile file
     ) {
         CoursePreviewResponse response = courseService.previewCourse(title, description, file);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping(value = "/preview/jobs", consumes = "multipart/form-data")
+    public ResponseEntity<CourseJobStartResponse> generateCoursePreviewJob(
+            @RequestParam("title") String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication
+    ) {
+        GenerateCoursePreviewRequest request = new GenerateCoursePreviewRequest(
+                title,
+                description,
+                file
+        );
+
+        CourseJobStartResponse response = coursePreviewService.startCoursePreviewJob(
+                request,
+                (dev.pawin.backend_learning_buddy.auth.entity.User) authentication.getPrincipal()
+        );
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+    }
+
+    @GetMapping("/preview/jobs/{jobId}")
+    public ResponseEntity<CourseJobStatusResponse> getCoursePreviewJobStatus(
+            @PathVariable UUID jobId,
+            Authentication authentication
+    ) {
+        CourseJobStatusResponse response = coursePreviewService.getJobStatus(
+                jobId,
+                (dev.pawin.backend_learning_buddy.auth.entity.User) authentication.getPrincipal()
+        );
         return ResponseEntity.ok(response);
     }
 

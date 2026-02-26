@@ -16,12 +16,10 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -47,9 +45,11 @@ public class AiServiceClient {
         this.objectMapper = new ObjectMapper();
     }
 
-    public List<TopicPreviewDto> generateCoursePreview(MultipartFile file) {
+    public List<TopicPreviewDto> generateCoursePreview(String filename, String contentType, byte[] fileContent) {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.part("file", file.getResource());
+        builder.part("file", fileContent)
+                .filename(filename)
+                .contentType(MediaType.parseMediaType(contentType));
 
 
         try {
