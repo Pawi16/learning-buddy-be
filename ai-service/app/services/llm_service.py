@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from langchain_openai import ChatOpenAI
@@ -103,57 +104,62 @@ def determine_split_strategy(font_stats) -> tuple[list[float], float]:
             details=[str(e), "Fallback to default headers failed"]
         )
 
-def enrich_topics(raw_topics) -> list[ProcessedTopic]:
+async def _enrich_single_topic(
+    llm_instance,
+    index: int,
+    topic: dict,
+    semaphore: asyncio.Semaphore
+) -> ProcessedTopic | None:
     """
-    Enriches raw topics with AI-generated content.
+    Enrich a single topic with AI-generated content (async).
+
+    Args:
+        llm_instance: The LLM instance to use for enrichment
+        index: The topic index
+        topic: Raw topic data dict with 'title' and 'content'
+        semaphore: Semaphore for concurrency control
+
+    Returns:
+        ProcessedTopic if successful, None if topic is too short
 
     Raises:
-        AIEnrichmentException: If AI fails to enrich any topic
-        AIServiceUnavailableException: If AI service is unreachable
+        AIServiceUnavailableException: If AI service authentication/rate limit/timeout fails
+        AIEnrichmentException: If AI enrichment or parsing fails
     """
-    if not raw_topics:
-        logger.warning("No topics provided for enrichment")
-        return []
-
-    logger.info(f"Enriching {len(raw_topics)} topics using {settings.MODEL_NAME}...")
-    final_results = []
-
-    for index, topic in enumerate(raw_topics):
-        # Log progress every 5 topics
-        if (index + 1) % 5 == 0:
-            logger.info(f"Progress: {index + 1}/{len(raw_topics)} topics enriched")
-
+    async with semaphore:
         # Skip very short topics (likely junk)
         if len(topic['content']) < 50:
             logger.debug(f"Skipping topic {index + 1} (too short: {len(topic['content'])} chars)")
-            continue
+            return None
 
         prompt = f"""
         You are a Course Creator. Refine this raw PDF content into a study topic.
-        
+
         RAW TITLE: {topic['title']}
         RAW CONTENT (Truncated):
         {topic['content'][:3000]}
-        
+
         TASK:
         1. "clean_title": Fix typos, remove numbers like '1.1'.
         2. "description": Write a 2-sentence summary of what this topic covers.
         3. "summary_note": Write detailed study notes in Markdown format (use bullet points).
-        
+
         Return JSON only.
         """
-        
-        try:
-            # We use with_structured_output to force the Pydantic schema
-            enrichment = llm.with_structured_output(TopicEnrichment, method="json_mode").invoke(prompt)
 
-            final_results.append(ProcessedTopic(
+        try:
+            # Use ainvoke instead of invoke for async processing
+            enrichment = await llm_instance.with_structured_output(
+                TopicEnrichment, method="json_mode"
+            ).ainvoke(prompt)
+
+            return ProcessedTopic(
                 order_index=index + 1,
                 title=enrichment.clean_title,
                 description=enrichment.description,
                 raw_text=topic['content'],
                 summary_note=enrichment.summary_note
-            ))
+            )
         except AuthenticationError as e:
             logger.error(f"AI authentication failed while enriching topic {index + 1}: {e}")
             raise AIServiceUnavailableException(
@@ -186,5 +192,53 @@ def enrich_topics(raw_topics) -> list[ProcessedTopic]:
                 message=f"Failed to enrich topic {index + 1}",
                 details=[f"Topic: {topic.get('title', 'Unknown')}", str(e)]
             )
-            
+
+
+async def enrich_topics(raw_topics) -> list[ProcessedTopic]:
+    """
+    Enriches raw topics with AI-generated content (concurrent).
+
+    Uses asyncio.gather() to process topics in parallel with controlled concurrency.
+
+    Raises:
+        AIEnrichmentException: If all topics fail to enrich
+        AIServiceUnavailableException: If AI service is unreachable
+    """
+    if not raw_topics:
+        logger.warning("No topics provided for enrichment")
+        return []
+
+    logger.info(
+        f"Enriching {len(raw_topics)} topics using {settings.MODEL_NAME} "
+        f"with concurrency limit {settings.AI_CONCURRENCY_LIMIT}..."
+    )
+
+    semaphore = asyncio.Semaphore(settings.AI_CONCURRENCY_LIMIT)
+    tasks = [
+        _enrich_single_topic(llm, i, topic, semaphore)
+        for i, topic in enumerate(raw_topics)
+    ]
+
+    # Use return_exceptions=True to prevent one failing topic from canceling all others
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Filter out None values (short topics) and exceptions
+    final_results = []
+    failed_count = 0
+
+    for result in results:
+        if isinstance(result, Exception):
+            failed_count += 1
+            logger.warning(f"Topic enrichment failed: {result}")
+        elif result is not None:
+            final_results.append(result)
+
+    # Sort by order_index to preserve original order
+    final_results = sorted(final_results, key=lambda x: x.order_index)
+
+    logger.info(
+        f"Successfully enriched {len(final_results)} topics "
+        f"({failed_count} failed) in {len(raw_topics)} total topics"
+    )
+
     return final_results

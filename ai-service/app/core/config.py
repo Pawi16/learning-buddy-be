@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     AI_MAX_RETRIES: int = 2
     AI_RETRY_DELAY: float = 2.0
     AI_TIMEOUT: int = 90
+    AI_CONCURRENCY_LIMIT: int = 5
 
     # Error Handling Config
     INCLUDE_ERROR_DETAILS: bool = False  # Set True for development

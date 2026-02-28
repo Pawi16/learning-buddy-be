@@ -140,11 +140,10 @@ async def process_pdf(
         logger.info(f"Splitting content into {len(split_sizes)} topics...")
         raw_topics = pdf_service.split_content(lines, split_sizes, body_size)
 
-        # 5. Enrich topics with AI-generated summaries
+        # 5. Enrich topics with AI-generated summaries (concurrent)
         logger.info("Enriching topics with AI summaries...")
         start_time = time.time()
-        # Note: calling this synchronously as requested
-        final_topics = llm_service.enrich_topics(raw_topics)
+        final_topics = await llm_service.enrich_topics(raw_topics)
         elapsed_time = time.time() - start_time
         logger.info(f"Successfully enriched {len(final_topics)} topics in {elapsed_time:.2f} seconds")
 
