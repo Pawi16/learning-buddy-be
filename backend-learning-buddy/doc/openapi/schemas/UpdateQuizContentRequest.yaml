@@ -45,3 +45,5 @@ properties:
                 type: string
               is_correct:
                 type: boolean
+              explanation:
+                type: string

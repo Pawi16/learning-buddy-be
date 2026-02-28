@@ -82,5 +82,8 @@ properties:
               choice_text:
                 type: string
                 example: "Singleton Pattern"
-              is_correct: 
+              is_correct:
                 type: boolean
+              explanation:
+                type: string
+                description: "Explanation why this choice is correct or incorrect"

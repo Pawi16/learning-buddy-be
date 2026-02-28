@@ -60,3 +60,6 @@ properties:
                 type: integer
               choice_text:
                 type: string
+              explanation:
+                type: string
+                description: "Explanation why this choice is correct or incorrect"
