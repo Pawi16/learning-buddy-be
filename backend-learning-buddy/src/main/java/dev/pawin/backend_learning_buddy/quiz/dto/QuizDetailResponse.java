@@ -72,5 +72,7 @@ public class QuizDetailResponse {
 
         @JsonProperty("is_correct")
         private Boolean isCorrect;
+
+        private String explanation;
     }
 }

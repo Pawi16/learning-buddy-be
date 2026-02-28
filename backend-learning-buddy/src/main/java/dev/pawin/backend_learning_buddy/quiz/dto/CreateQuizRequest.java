@@ -77,5 +77,7 @@ public class CreateQuizRequest {
         @JsonProperty("is_correct")
         @NotNull(message = "isCorrect is required")
         private Boolean isCorrect;
+
+        private String explanation;
     }
 }

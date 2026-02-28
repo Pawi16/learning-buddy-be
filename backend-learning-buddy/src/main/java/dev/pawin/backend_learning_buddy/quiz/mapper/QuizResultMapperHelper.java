@@ -44,6 +44,7 @@ public class QuizResultMapperHelper {
                     .map(c -> QuizResultResponse.FeedbackDto.ChoiceDetailDto.builder()
                             .id(c.getId())
                             .choiceText(c.getChoiceText())
+                            .explanation(c.getExplanation())
                             .build())
                     .collect(Collectors.toList());
 

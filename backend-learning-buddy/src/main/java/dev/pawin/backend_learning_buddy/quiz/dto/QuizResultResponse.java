@@ -66,6 +66,7 @@ public class QuizResultResponse {
             private Long id;
             @JsonProperty("choice_text")
             private String choiceText;
+            private String explanation;
         }
     }
 }

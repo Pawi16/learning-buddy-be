@@ -11,6 +11,7 @@ import dev.pawin.backend_learning_buddy.infrastructure.ai.AiServiceClient;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -27,6 +28,7 @@ public class AsyncCourseGenerationService {
 
     private final CoursePreviewJobRepository jobRepository;
     private final AiServiceClient aiServiceClient;
+    @Qualifier("courseTaskExecutor")
     private final Executor courseTaskExecutor;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final TransactionTemplate transactionTemplate;

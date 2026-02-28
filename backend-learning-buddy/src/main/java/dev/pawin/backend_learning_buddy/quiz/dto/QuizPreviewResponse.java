@@ -48,6 +48,8 @@ public class QuizPreviewResponse {
 
             @JsonProperty("is_correct")
             private Boolean isCorrect;
+
+            private String explanation;
         }
     }
 }

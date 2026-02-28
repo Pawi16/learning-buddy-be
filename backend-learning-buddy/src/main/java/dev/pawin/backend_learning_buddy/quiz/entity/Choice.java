@@ -30,6 +30,9 @@ public class Choice extends BaseEntity {
     @Column(name = "is_correct", nullable = false)
     private Boolean isCorrect;
 
+    @Column(name = "explanation")
+    private String explanation;
+
     @OneToMany(mappedBy = "selectedChoice", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<AnswerHistory> answerHistories = new ArrayList<>();

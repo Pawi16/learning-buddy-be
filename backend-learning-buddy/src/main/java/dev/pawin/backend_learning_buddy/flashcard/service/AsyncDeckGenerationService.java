@@ -15,6 +15,7 @@ import dev.pawin.backend_learning_buddy.course.repository.TopicRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -35,6 +36,7 @@ public class AsyncDeckGenerationService {
     private final DeckPreviewJobRepository jobRepository;
     private final TopicRepository topicRepository;
     private final AiServiceClient aiServiceClient;
+    @Qualifier("quizTaskExecutor")
     private final Executor quizTaskExecutor;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final TransactionTemplate transactionTemplate;

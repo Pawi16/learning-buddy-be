@@ -40,5 +40,8 @@ public class GenerateQuizAiResponse {
         private String choiceText;
         @JsonProperty("is_correct")
         private Boolean isCorrect;
+
+        @JsonProperty("explanation")
+        private String explanation;
     }
 }

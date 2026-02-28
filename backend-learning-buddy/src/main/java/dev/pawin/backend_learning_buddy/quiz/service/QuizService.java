@@ -116,6 +116,7 @@ public class QuizService {
                                                 .question(question)
                                                 .choiceText(choiceDto.getChoiceText())
                                                 .isCorrect(choiceDto.getIsCorrect())
+                                                .explanation(choiceDto.getExplanation())
                                                 .build();
                                 question.getChoices().add(choice);
                         }
@@ -346,6 +347,7 @@ public class QuizService {
                                                                                         .id(choice.getId())
                                                                                         .choiceText(choice.getChoiceText())
                                                                                         .isCorrect(choice.getIsCorrect())
+                                                                                        .explanation(choice.getExplanation())
                                                                                         .build())
                                                                         .collect(Collectors.toList()))
                                                         .build();
@@ -477,6 +479,7 @@ public class QuizService {
                                                 .question(question)
                                                 .choiceText(choiceDto.getChoiceText())
                                                 .isCorrect(choiceDto.getIsCorrect())
+                                                .explanation(choiceDto.getExplanation())
                                                 .build();
                                 question.getChoices().add(choice);
                         }
@@ -535,6 +538,7 @@ public class QuizService {
                                 UpdateQuizContentRequest.ChoiceDetailDto incomingChoice = incomingChoiceMap.get(existingChoice.getId());
                                 existingChoice.setChoiceText(incomingChoice.getChoiceText());
                                 existingChoice.setIsCorrect(incomingChoice.getIsCorrect());
+                                existingChoice.setExplanation(incomingChoice.getExplanation());
                                 incomingChoiceMap.remove(existingChoice.getId());
                         } else {
                                 // DELETE (cascade not needed, Choice has no children)
