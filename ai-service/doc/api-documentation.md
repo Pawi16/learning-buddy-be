@@ -149,10 +149,26 @@ Returns a quiz with generated questions:
       "explanation": "The Builder pattern separates the construction of an object from its representation, allowing the same construction process to create different representations.",
       "difficulty_level": "EASY",
       "choices": [
-        {"choice_text": "To improve performance", "is_correct": false},
-        {"choice_text": "To separate construction from representation", "is_correct": true},
-        {"choice_text": "To reduce memory usage", "is_correct": false},
-        {"choice_text": "To simplify inheritance", "is_correct": false}
+        {
+          "choice_text": "To improve performance",
+          "is_correct": false,
+          "explanation": "Incorrect. The Builder pattern is not primarily about performance; it's about object construction flexibility."
+        },
+        {
+          "choice_text": "To separate construction from representation",
+          "is_correct": true,
+          "explanation": "Correct. The Builder pattern separates the construction process from the object's representation."
+        },
+        {
+          "choice_text": "To reduce memory usage",
+          "is_correct": false,
+          "explanation": "Incorrect. The Builder pattern may actually use more memory due to additional objects."
+        },
+        {
+          "choice_text": "To simplify inheritance",
+          "is_correct": false,
+          "explanation": "Incorrect. The Builder pattern is about construction, not inheritance simplification."
+        }
       ]
     },
     {
@@ -161,8 +177,16 @@ Returns a quiz with generated questions:
       "explanation": "True. The Builder pattern is classified as a creational design pattern that deals with object creation mechanisms.",
       "difficulty_level": "EASY",
       "choices": [
-        {"choice_text": "True", "is_correct": true},
-        {"choice_text": "False", "is_correct": false}
+        {
+          "choice_text": "True",
+          "is_correct": true,
+          "explanation": "Correct. The Builder pattern is part of the creational design patterns category."
+        },
+        {
+          "choice_text": "False",
+          "is_correct": false,
+          "explanation": "Incorrect. The Builder pattern is indeed a creational design pattern."
+        }
       ]
     },
     {
@@ -171,10 +195,10 @@ Returns a quiz with generated questions:
       "explanation": "The Builder pattern typically has 4 key components: Builder, Concrete Builder, Director, and Product.",
       "difficulty_level": "EASY",
       "choices": [
-        {"choice_text": "2", "is_correct": false},
-        {"choice_text": "3", "is_correct": false},
-        {"choice_text": "4", "is_correct": true},
-        {"choice_text": "5", "is_correct": false}
+        {"choice_text": "2", "is_correct": false, "explanation": "Incorrect. The pattern has more than 2 components."},
+        {"choice_text": "3", "is_correct": false, "explanation": "Incorrect. The pattern has 4 components, not 3."},
+        {"choice_text": "4", "is_correct": true, "explanation": "Correct. The Builder, Concrete Builder, Director, and Product."},
+        {"choice_text": "5", "is_correct": false, "explanation": "Incorrect. The pattern has 4 components, not 5."}
       ]
     }
   ]
@@ -200,10 +224,11 @@ Returns a quiz with generated questions:
 
 #### Choice Schema
 
-| Field        | Type    | Description                      |
-|--------------|---------|----------------------------------|
-| choice_text  | string  | The choice text                 |
-| is_correct   | boolean | Whether this choice is correct  |
+| Field        | Type    | Description                                        |
+|--------------|---------|----------------------------------------------------|
+| choice_text  | string  | The choice text                                   |
+| is_correct   | boolean | Whether this choice is correct                   |
+| explanation  | string  | Explanation why this choice is correct or incorrect |
 
 #### Error Responses
 
@@ -640,9 +665,14 @@ properties:
   is_correct:
     type: boolean
     description: Whether this choice is correct
+  explanation:
+    type: string
+    minLength: 1
+    description: Explanation why this choice is correct or incorrect
 required:
   - choice_text
   - is_correct
+  - explanation
 ```
 
 ### GenerateFlashcardRequest

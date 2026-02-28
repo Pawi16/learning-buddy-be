@@ -13,8 +13,13 @@
     "is_correct": {
       "type": "boolean",
       "description": "Whether this choice is correct"
+    },
+    "explanation": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Explanation why this choice is correct or incorrect"
     }
   },
-  "required": ["choice_text", "is_correct"],
+  "required": ["choice_text", "is_correct", "explanation"],
   "additionalProperties": false
 }

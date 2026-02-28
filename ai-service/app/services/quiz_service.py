@@ -156,6 +156,7 @@ def _transform_llm_to_api_response(
             ChoiceResponse(
                 choice_text=opt.text,
                 is_correct=(opt.id == llm_q.correct_option_id),
+                explanation=opt.explanation,
             )
             for opt in llm_q.options
         ]
@@ -247,6 +248,10 @@ def _generate_quiz_for_config(
         OUTPUT INSTRUCTIONS:
         Return the result as a single valid JSON object.
 
+        - EXPLANATIONS: Provide a brief explanation for EACH option explaining why it is correct or incorrect.
+        - For correct options: Explain why the answer is correct
+        - For incorrect options: Explain why the answer is incorrect (common misconception, etc.)
+
         REQUIRED JSON STRUCTURE (Follow this exactly):
         {{
             "questions": [
@@ -255,11 +260,11 @@ def _generate_quiz_for_config(
                     "type": "{q_type_lower}",
                     "question_text": "Question goes here?",
                     "options": [
-                        {{"id": "A", "text": "Option A"}},
-                        {{"id": "B", "text": "Option B"}}
+                        {{"id": "A", "text": "Option A", "explanation": "Why this option is correct/incorrect"}},
+                        {{"id": "B", "text": "Option B", "explanation": "Why this option is correct/incorrect"}}
                     ],
                     "correct_option_id": "A",
-                    "explanation": "Explanation here."
+                    "explanation": "Overall explanation for the question."
                 }}
             ]
         }}

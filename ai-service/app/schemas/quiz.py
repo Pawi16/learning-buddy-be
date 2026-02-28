@@ -20,6 +20,7 @@ class GenerateQuizRequest(BaseModel):
 class LLMQuestionOption(BaseModel):
     id: str
     text: str
+    explanation: str
 
 class LLMQuizQuestion(BaseModel):
     id: int
@@ -36,6 +37,7 @@ class LLMGeneratedBatch(BaseModel):
 class ChoiceResponse(BaseModel):
     choice_text: str
     is_correct: bool
+    explanation: str
 
 class QuestionResponse(BaseModel):
     question_text: str
