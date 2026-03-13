@@ -55,7 +55,7 @@ public class QuizController {
     @PatchMapping("/{id}")
     public ResponseEntity<QuizMetadataResponse> updateQuizMetadata(
             @PathVariable Long id,
-            @RequestBody UpdateQuizMetadataRequest request,
+            @Valid @RequestBody UpdateQuizMetadataRequest request,
             Authentication authentication
     ) {
         UpdateQuizMetadataResponse response = quizService.updateQuizMetadata(id, authentication.getName(), request);

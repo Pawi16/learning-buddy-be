@@ -125,7 +125,7 @@ public class CourseController {
     @PatchMapping("/{id}")
     public ResponseEntity<UpdateCourseResponse> updateCourseMetadata (
             @PathVariable Long id,
-            @RequestBody UpdateCourseRequest request,
+            @Valid @RequestBody UpdateCourseRequest request,
             Authentication authentication
     ){
         UpdateCourseResponse response = courseService.updateCourseMetadata(id, authentication.getName(), request);
@@ -153,7 +153,7 @@ public class CourseController {
     @PutMapping("/{id}/content")
     public ResponseEntity<UpdateCourseContentResponse> updateCourseContent(
             @PathVariable Long id,
-            @RequestBody UpdateCourseContentRequest request,
+            @Valid @RequestBody UpdateCourseContentRequest request,
             Authentication authentication
     ){
         UpdateCourseContentResponse response = courseService.updateCourseContent(id, authentication.getName(), request);

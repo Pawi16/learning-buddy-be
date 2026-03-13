@@ -43,6 +43,7 @@ public class UpdateQuizContentRequest {
         @NotNull(message = "Topic ID is required")
         private Long topicId;
 
+        @NotBlank(message = "Explanation is required")
         private String explanation;
 
         @NotEmpty(message = "Question must have at least one choice")
